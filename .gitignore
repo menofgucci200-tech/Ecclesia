@@ -1,0 +1,36 @@
+# ===== Racine du monorepo Ecclesia =====
+# Les sous-projets Ecclesia/ (Laravel) et ecclesia_/ (Flutter) ont
+# leurs propres .gitignore. Ce fichier ajoute une sécurité globale.
+
+# Configuration locale des outils
+.claude/
+.idea/
+.vscode/
+*.iml
+
+# Secrets / environnement (ne jamais pousser)
+**/.env
+**/.env.backup
+**/.env.production
+!**/.env.example
+
+# Dépendances (régénérables via composer.lock / pubspec.lock)
+**/vendor/
+**/node_modules/
+
+# Artefacts de build (régénérables)
+**/build/
+**/.dart_tool/
+**/.flutter-plugins-dependencies
+**/flutter/ephemeral/
+**/public/build/
+**/public/hot
+
+# Caches & logs
+*.log
+**/.phpunit.result.cache
+**/storage/*.key
+
+# OS
+.DS_Store
+Thumbs.db
