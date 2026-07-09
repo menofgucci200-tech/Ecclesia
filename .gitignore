@@ -31,6 +31,10 @@
 **/.phpunit.result.cache
 **/storage/*.key
 
+# Bundles de design (volumineux — hors versionnement)
+ecclesia_/design/*.zip
+ecclesia_/design/extracted/
+
 # OS
 .DS_Store
 Thumbs.db

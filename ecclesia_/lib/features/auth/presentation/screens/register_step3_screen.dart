@@ -69,7 +69,7 @@ class _RegisterStep3ScreenState extends ConsumerState<RegisterStep3Screen> {
 
     return AuthStepScaffold(
       title: 'Dernière étape',
-      subtitle: 'Créez un mot de passe sécurisé pour votre compte.',
+      subtitle: 'Choisissez un mot de passe facile à retenir.',
       currentStep: 3,
       totalSteps: 3,
       body: Column(
@@ -89,6 +89,12 @@ class _RegisterStep3ScreenState extends ConsumerState<RegisterStep3Screen> {
           ),
           const SizedBox(height: AppDimens.sm),
           PasswordStrengthBar(password: _password),
+          const SizedBox(height: AppDimens.sm),
+          Text(
+            'Au moins ${AppConstants.minPasswordLength} caractères. '
+            'Aucune majuscule ni chiffre obligatoire — choisissez ce qui vous convient.',
+            style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5),
+          ),
           const SizedBox(height: AppDimens.lg),
           AppTextField(
             label: 'CONFIRMER LE MOT DE PASSE',

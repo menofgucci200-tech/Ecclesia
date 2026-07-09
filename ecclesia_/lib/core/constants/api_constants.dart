@@ -18,7 +18,7 @@ class ApiConstants {
 
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://127.0.0.1:8000/api',
+    defaultValue: 'http://192.168.1.109:8000/api',
   );
 
   static const Duration connectTimeout = Duration(seconds: 15);
@@ -42,4 +42,7 @@ class ApiConstants {
 
   // The authenticated faithful's parish membership.
   static const String userParish = '/user/parish';
+
+  // Parish content — the "Fil paroissial" feed.
+  static const String parishAnnouncements = '/parish/announcements';
 }

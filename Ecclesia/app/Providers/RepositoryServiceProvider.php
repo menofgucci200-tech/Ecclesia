@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Repositories\AnnouncementRepository;
+use App\Repositories\Contracts\AnnouncementRepositoryInterface;
 use App\Repositories\Contracts\ParishRepositoryInterface;
 use App\Repositories\Contracts\PasswordResetCodeRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
@@ -24,6 +26,7 @@ class RepositoryServiceProvider extends ServiceProvider implements DeferrablePro
         UserRepositoryInterface::class => UserRepository::class,
         ParishRepositoryInterface::class => ParishRepository::class,
         PasswordResetCodeRepositoryInterface::class => PasswordResetCodeRepository::class,
+        AnnouncementRepositoryInterface::class => AnnouncementRepository::class,
     ];
 
     /**
@@ -35,6 +38,7 @@ class RepositoryServiceProvider extends ServiceProvider implements DeferrablePro
             UserRepositoryInterface::class,
             ParishRepositoryInterface::class,
             PasswordResetCodeRepositoryInterface::class,
+            AnnouncementRepositoryInterface::class,
         ];
     }
 }

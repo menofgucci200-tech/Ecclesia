@@ -92,9 +92,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 ///
 /// - While the session is resolving (auto-login), stay on the splash screen.
 /// - Unauthenticated users may only reach onboarding/auth routes.
+/// - On every launch a signed-in user lands on the personalised "Bienvenue"
+///   screen, which gates entry to the dashboard via its "Commencer" button.
 /// - Association to a parish is mandatory: an authenticated user without a
 ///   parish is steered to "choose parish" (except while confirming or on the
-///   one-time welcome screen).
+///   welcome screen).
 /// - Users with a parish may still open "choose parish" to change it.
 String? _redirect(Ref ref, GoRouterState state) {
   final sessionAsync = ref.read(sessionControllerProvider);
@@ -110,9 +112,11 @@ String? _redirect(Ref ref, GoRouterState state) {
     return _publicOnlyRoutes.contains(location) ? null : AppRoutes.onboarding;
   }
 
-  // Landing from splash or an auth-only route: route to the right home base.
+  // On app start (splash) or right after login/registration, always land on
+  // the personalised "Bienvenue" screen; from there "Commencer" opens the
+  // dashboard. Users without a parish must associate one first.
   if (location == AppRoutes.splash || _publicOnlyRoutes.contains(location)) {
-    return user.hasParish ? AppRoutes.home : AppRoutes.chooseParish;
+    return user.hasParish ? AppRoutes.welcomeUser : AppRoutes.chooseParish;
   }
 
   if (location == AppRoutes.welcomeUser) {

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\AnnouncementController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ParishController;
 use App\Http\Controllers\Api\UserParishController;
@@ -38,4 +39,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // The authenticated faithful's parish membership.
     Route::get('user/parish', [UserParishController::class, 'show']);
     Route::post('user/parish', [UserParishController::class, 'store']);
+
+    // The parish feed ("Fil paroissial") for the authenticated faithful.
+    Route::get('parish/announcements', [AnnouncementController::class, 'index']);
 });
