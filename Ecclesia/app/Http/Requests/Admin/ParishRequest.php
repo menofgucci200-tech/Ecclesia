@@ -81,7 +81,8 @@ class ParishRequest extends FormRequest
             $this->merge(['code' => strtoupper(trim((string) $this->input('code')))]);
         }
         if ($this->filled('login')) {
-            $this->merge(['login' => strtolower(trim((string) $this->input('login')))]);
+            // Preserve the case the user typed; only trim surrounding spaces.
+            $this->merge(['login' => trim((string) $this->input('login'))]);
         }
     }
 }

@@ -36,8 +36,8 @@
             </div>
             <div>
                 <label class="field-label" for="login">Login administrateur @if(!$isEdit)<span class="text-red-500">*</span>@endif</label>
-                <input id="login" name="login" type="text" value="{{ $adminLogin }}" class="input lowercase"
-                       autocapitalize="none" autocorrect="off" spellcheck="false" @if(!$isEdit) required @endif>
+                <input id="login" name="login" type="text" value="{{ $adminLogin }}" class="input"
+                       autocorrect="off" spellcheck="false" @if(!$isEdit) required @endif>
                 <p class="field-hint">Sert à la paroisse pour se connecter à son espace (sans espace).</p>
                 @error('login') <p class="field-error">{{ $message }}</p> @enderror
             </div>
