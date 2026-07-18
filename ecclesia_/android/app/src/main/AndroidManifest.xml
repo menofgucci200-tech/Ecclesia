@@ -1,6 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Required for the app to reach the Ecclesia API over the network (release builds). -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="ecclesia_"
+        android:label="Ecclesia"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
