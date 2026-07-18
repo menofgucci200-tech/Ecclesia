@@ -45,6 +45,9 @@
                     <a href="{{ admin_route('parishes.index') }}" @class(['nav-link', 'nav-link-active' => admin_route_is('parishes.*')])>
                         <x-icon name="church" class="h-5 w-5" /> Paroisses
                     </a>
+                    <a href="{{ admin_route('liturgies.index') }}" @class(['nav-link', 'nav-link-active' => admin_route_is('liturgies.*')])>
+                        <x-icon name="book" class="h-5 w-5" /> Liturgie
+                    </a>
                 @endif
                 <a href="{{ admin_route('members.index') }}" @class(['nav-link', 'nav-link-active' => admin_route_is('members.*')])>
                     <x-icon name="users" class="h-5 w-5" /> Fidèles
@@ -52,6 +55,11 @@
                 <a href="{{ admin_route('announcements.index') }}" @class(['nav-link', 'nav-link-active' => admin_route_is('announcements.*')])>
                     <x-icon name="megaphone" class="h-5 w-5" /> Annonces
                 </a>
+                @if(auth()->user()->managedParishId() !== null)
+                    <a href="{{ admin_route('mass-times.index') }}" @class(['nav-link', 'nav-link-active' => admin_route_is('mass-times.*')])>
+                        <x-icon name="calendar" class="h-5 w-5" /> Horaires de messe
+                    </a>
+                @endif
             </nav>
 
             {{-- User card --}}

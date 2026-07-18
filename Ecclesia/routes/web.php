@@ -6,6 +6,8 @@ use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\Admin\Auth\LoginController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\HomeController;
+use App\Http\Controllers\Admin\LiturgyController;
+use App\Http\Controllers\Admin\MassTimeController;
 use App\Http\Controllers\Admin\MemberController;
 use App\Http\Controllers\Admin\ParishController;
 use Illuminate\Support\Facades\Route;
@@ -34,6 +36,12 @@ $sharedAdminRoutes = function (string $roleScope): void {
 
         // Announcements (parish feed consumed by the mobile app).
         Route::resource('announcements', AnnouncementController::class)->except(['show']);
+
+        // Mass schedule (parish admins manage their own parish).
+        Route::get('mass-times', [MassTimeController::class, 'index'])->name('mass-times.index');
+        Route::post('mass-times', [MassTimeController::class, 'store'])->name('mass-times.store');
+        Route::patch('mass-times/{massTime}', [MassTimeController::class, 'update'])->name('mass-times.update');
+        Route::delete('mass-times/{massTime}', [MassTimeController::class, 'destroy'])->name('mass-times.destroy');
     });
 };
 
@@ -62,5 +70,13 @@ Route::prefix('super')->name('super.')->group(function () use ($authRoutes, $sha
     Route::middleware('admin:super')->group(function () {
         Route::resource('parishes', ParishController::class)->except(['show']);
         Route::patch('parishes/{parish}/toggle', [ParishController::class, 'toggle'])->name('parishes.toggle');
+
+        // The shared liturgy (auto-filled from AELF) is managed by super admins.
+        Route::get('liturgies', [LiturgyController::class, 'index'])->name('liturgies.index');
+        Route::get('liturgies/{liturgy}/edit', [LiturgyController::class, 'edit'])->name('liturgies.edit');
+        Route::put('liturgies/{liturgy}', [LiturgyController::class, 'update'])->name('liturgies.update');
+        Route::patch('liturgies/{liturgy}/toggle', [LiturgyController::class, 'toggle'])->name('liturgies.toggle');
+        Route::post('liturgies/{liturgy}/resync', [LiturgyController::class, 'resync'])->name('liturgies.resync');
+        Route::post('liturgies/sync-upcoming', [LiturgyController::class, 'syncUpcoming'])->name('liturgies.sync-upcoming');
     });
 });

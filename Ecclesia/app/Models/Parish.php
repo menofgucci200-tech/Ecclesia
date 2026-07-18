@@ -98,6 +98,16 @@ class Parish extends Model
     }
 
     /**
+     * The mass schedule for this parish.
+     *
+     * @return HasMany<MassTime, $this>
+     */
+    public function massTimes(): HasMany
+    {
+        return $this->hasMany(MassTime::class)->orderBy('day_of_week')->orderBy('time');
+    }
+
+    /**
      * The administrator account attached to this parish (scoped to /admin).
      *
      * @return HasOne<User, $this>

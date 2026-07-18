@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Api\AnnouncementController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\HomeController;
+use App\Http\Controllers\Api\LiturgyController;
 use App\Http\Controllers\Api\ParishController;
 use App\Http\Controllers\Api\UserParishController;
 use Illuminate\Support\Facades\Route;
@@ -42,4 +44,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // The parish feed ("Fil paroissial") for the authenticated faithful.
     Route::get('parish/announcements', [AnnouncementController::class, 'index']);
+
+    // Aggregated home screen (liturgy of the day + parish schedule + headline).
+    Route::get('home', [HomeController::class, 'index']);
+
+    // Liturgy of the day (and any date) — auto-filled from AELF.
+    Route::get('liturgy', [LiturgyController::class, 'today']);
+    Route::get('liturgy/{date}', [LiturgyController::class, 'show'])->where('date', '\d{4}-\d{2}-\d{2}');
 });
