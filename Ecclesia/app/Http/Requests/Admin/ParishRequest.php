@@ -20,12 +20,26 @@ class ParishRequest extends FormRequest
      */
     public function rules(): array
     {
-        $parishId = $this->route('parish')?->id;
+        $parish = $this->route('parish');
+        $isCreate = $parish === null;
+        $parishId = $parish?->id;
+        $adminUserId = $parish?->admin?->id;
 
         return [
+            // --- Champs obligatoires ---------------------------------------
             'name' => ['required', 'string', 'max:255'],
             'code' => ['required', 'string', 'max:30', Rule::unique('parishes', 'code')->ignore($parishId)],
-            'diocese' => ['required', 'string', 'max:255'],
+            'subscription_amount' => ['required', 'integer', 'min:0', 'max:100000000'],
+            'login' => [
+                $isCreate ? 'required' : 'nullable',
+                'string', 'alpha_dash', 'min:3', 'max:50',
+                Rule::unique('users', 'username')->ignore($adminUserId),
+            ],
+            'password' => [$isCreate ? 'required' : 'nullable', 'string', 'min:6', 'max:255'],
+
+            // --- Champs optionnels -----------------------------------------
+            'logo' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
+            'diocese' => ['nullable', 'string', 'max:255'],
             'address' => ['nullable', 'string', 'max:255'],
             'city' => ['nullable', 'string', 'max:255'],
             'commune' => ['nullable', 'string', 'max:255'],
@@ -44,9 +58,20 @@ class ParishRequest extends FormRequest
     {
         return [
             'name' => 'nom', 'code' => 'code', 'diocese' => 'diocèse',
-            'address' => 'adresse', 'city' => 'ville', 'commune' => 'commune',
+            'subscription_amount' => 'abonnement', 'login' => 'login', 'password' => 'mot de passe',
+            'logo' => 'logo', 'address' => 'adresse', 'city' => 'ville', 'commune' => 'commune',
             'region' => 'région', 'country' => 'pays', 'phone' => 'téléphone',
             'email' => 'e-mail', 'status' => 'statut',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'login.alpha_dash' => 'Le login ne peut contenir que des lettres, chiffres, tirets et underscores (sans espace).',
         ];
     }
 
@@ -54,6 +79,9 @@ class ParishRequest extends FormRequest
     {
         if ($this->filled('code')) {
             $this->merge(['code' => strtoupper(trim((string) $this->input('code')))]);
+        }
+        if ($this->filled('login')) {
+            $this->merge(['login' => strtolower(trim((string) $this->input('login')))]);
         }
     }
 }

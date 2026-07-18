@@ -31,6 +31,8 @@ class ParishResource extends JsonResource
             'phone' => $this->phone,
             'email' => $this->email,
             'logo' => $this->logo,
+            'logo_url' => $this->logo ? \Illuminate\Support\Facades\Storage::url($this->logo) : null,
+            'subscription_amount' => (int) $this->subscription_amount,
             'status' => $this->status->value,
         ];
     }

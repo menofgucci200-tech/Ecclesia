@@ -36,7 +36,8 @@
                 <thead>
                     <tr>
                         <th>Paroisse</th>
-                        <th>Code</th>
+                        <th>Code / Login</th>
+                        <th>Abonnement</th>
                         <th>Localisation</th>
                         <th>Fidèles</th>
                         <th>Statut</th>
@@ -48,16 +49,26 @@
                         <tr>
                             <td>
                                 <div class="flex items-center gap-3">
-                                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[color:var(--color-navy)]/10 text-[color:var(--color-navy)]">
-                                        <x-icon name="church" class="h-5 w-5" />
+                                    <span class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[color:var(--color-navy)]/10 text-[color:var(--color-navy)]">
+                                        @if($parish->logo)
+                                            <img src="{{ \Illuminate\Support\Facades\Storage::url($parish->logo) }}" alt="" class="h-full w-full object-cover">
+                                        @else
+                                            <x-icon name="church" class="h-5 w-5" />
+                                        @endif
                                     </span>
                                     <div class="min-w-0">
                                         <p class="font-semibold text-[color:var(--color-ink)]">{{ $parish->name }}</p>
-                                        <p class="text-xs text-[color:var(--color-ink-soft)]">{{ $parish->diocese }}</p>
+                                        <p class="text-xs text-[color:var(--color-ink-soft)]">{{ $parish->diocese ?: '—' }}</p>
                                     </div>
                                 </div>
                             </td>
-                            <td><span class="badge-muted font-mono">{{ $parish->code }}</span></td>
+                            <td>
+                                <span class="badge-muted font-mono">{{ $parish->code }}</span>
+                                @if($parish->admin?->username)
+                                    <p class="mt-1 text-xs text-[color:var(--color-ink-soft)]">🔑 {{ $parish->admin->username }}</p>
+                                @endif
+                            </td>
+                            <td><span class="badge-gold">{{ $parish->formattedSubscription() }}</span></td>
                             <td class="text-[color:var(--color-ink-soft)]">{{ $parish->commune ?? '—' }}{{ $parish->city ? ', '.$parish->city : '' }}</td>
                             <td><span class="font-semibold">{{ $parish->members_count }}</span></td>
                             <td>
@@ -91,7 +102,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6">
+                            <td colspan="7">
                                 <div class="flex flex-col items-center gap-2 py-12 text-center">
                                     <x-icon name="church" class="h-10 w-10 text-[color:var(--color-ink-faint)]" />
                                     <p class="text-sm font-medium text-[color:var(--color-ink-soft)]">Aucune paroisse trouvée.</p>

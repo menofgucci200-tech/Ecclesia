@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\ParishStatus;
+use App\Enums\UserRole;
 use Database\Factories\ParishFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Parish extends Model
 {
@@ -34,6 +36,7 @@ class Parish extends Model
         'email',
         'logo',
         'status',
+        'subscription_amount',
     ];
 
     /**
@@ -45,6 +48,7 @@ class Parish extends Model
     {
         return [
             'status' => ParishStatus::class,
+            'subscription_amount' => 'integer',
         ];
     }
 
@@ -91,5 +95,23 @@ class Parish extends Model
     public function isJoinable(): bool
     {
         return $this->status->isJoinable();
+    }
+
+    /**
+     * The administrator account attached to this parish (scoped to /admin).
+     *
+     * @return HasOne<User, $this>
+     */
+    public function admin(): HasOne
+    {
+        return $this->hasOne(User::class)->where('role', UserRole::Admin->value);
+    }
+
+    /**
+     * The annual subscription formatted for display, e.g. "2 000 F CFA".
+     */
+    public function formattedSubscription(): string
+    {
+        return number_format((int) $this->subscription_amount, 0, ',', ' ').' F CFA';
     }
 }

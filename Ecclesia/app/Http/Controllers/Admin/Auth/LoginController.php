@@ -39,10 +39,17 @@ class LoginController extends Controller
     {
         $area = $this->area($request);
 
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
+        $request->validate([
+            'email' => ['required', 'string'],
             'password' => ['required', 'string'],
         ]);
+
+        // The field accepts either an e-mail (super admins) or a login/username
+        // (parish admins). Resolve which column to authenticate against.
+        $identifier = (string) $request->input('email');
+        $field = filter_var($identifier, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+
+        $credentials = [$field => $identifier, 'password' => $request->input('password')];
 
         if (! Auth::attempt($credentials, $request->boolean('remember'))) {
             throw ValidationException::withMessages([

@@ -67,9 +67,10 @@
             <form method="POST" action="{{ route(($area ?? 'admin').'.login.attempt') }}" class="mt-6 space-y-5">
                 @csrf
                 <div>
-                    <label for="email" class="field-label">Adresse e-mail</label>
-                    <input id="email" name="email" type="email" value="{{ old('email') }}" required autofocus
-                           class="input" placeholder="vous@paroisse.ci">
+                    <label for="email" class="field-label">{{ $isSuper ? 'Adresse e-mail' : 'E-mail ou login' }}</label>
+                    <input id="email" name="email" type="text" value="{{ old('email') }}" required autofocus
+                           autocapitalize="none" autocorrect="off" spellcheck="false"
+                           class="input" placeholder="{{ $isSuper ? 'vous@ecclesia.ci' : 'login de la paroisse' }}">
                 </div>
                 <div>
                     <label for="password" class="field-label">Mot de passe</label>
