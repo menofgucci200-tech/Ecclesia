@@ -76,6 +76,7 @@ jobs:
             --exclude='.github' \
             --exclude='node_modules' \
             --exclude='.env' \
+            --exclude='/bootstrap/cache/*.php' \
             --exclude='/storage/app' \
             --exclude='/storage/framework/cache' \
             --exclude='/storage/framework/sessions' \

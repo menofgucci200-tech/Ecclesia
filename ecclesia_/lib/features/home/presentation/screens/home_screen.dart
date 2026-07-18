@@ -8,6 +8,8 @@ import '../../../../router/app_routes.dart';
 import '../../../announcement/data/models/announcement_model.dart';
 import '../../../announcement/presentation/announcement_visuals.dart';
 import '../../../announcement/presentation/providers/parish_feed_provider.dart';
+import '../providers/home_provider.dart';
+import '../screens/liturgy_screen.dart';
 import '../theme/home_palette.dart';
 import '../widgets/home_bottom_nav.dart';
 import '../widgets/home_sections.dart';
@@ -166,10 +168,15 @@ class _HomeFeed extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final feedAsync = ref.watch(parishFeedProvider);
+    final home = ref.watch(homeProvider).asData?.value;
 
     return RefreshIndicator(
       color: HomePalette.navy,
-      onRefresh: () => ref.refresh(parishFeedProvider.future),
+      onRefresh: () async {
+        ref.invalidate(homeProvider);
+        ref.invalidate(parishFeedProvider);
+        await ref.read(parishFeedProvider.future);
+      },
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.only(bottom: 20),
@@ -177,7 +184,15 @@ class _HomeFeed extends ConsumerWidget {
           const SizedBox(height: 18),
           Padding(
             padding: _hpad,
-            child: LiturgyTodayCard(onSeeLiturgy: () => onComingSoon('Liturgie du jour')),
+            child: LiturgyTodayCard(
+              liturgy: home?.liturgy,
+              nextMass: home?.nextMass,
+              onSeeLiturgy: home?.liturgy == null
+                  ? () => onComingSoon('Liturgie du jour')
+                  : () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => LiturgyScreen(liturgy: home!.liturgy!)),
+                      ),
+            ),
           ),
           const SizedBox(height: 18),
           ..._feedSection(ref, feedAsync),

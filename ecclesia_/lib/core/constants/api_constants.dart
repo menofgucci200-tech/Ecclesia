@@ -45,4 +45,9 @@ class ApiConstants {
 
   // Parish content — the "Fil paroissial" feed.
   static const String parishAnnouncements = '/parish/announcements';
+
+  // Home aggregate (liturgy of the day + parish schedule + headline) & liturgy.
+  static const String home = '/home';
+  static const String liturgy = '/liturgy';
+  static String liturgyForDate(String date) => '/liturgy/$date';
 }

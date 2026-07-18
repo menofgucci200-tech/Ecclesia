@@ -2,13 +2,21 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../data/models/home_data.dart';
 import '../theme/home_palette.dart';
 
-/// "Liturgie du jour" hero card with a live countdown to the next mass,
-/// reproducing the navy gradient card at the top of the home dashboard.
+/// "Liturgie du jour" hero card, fed by the real liturgy (AELF) and the
+/// parish's next mass, with a live countdown to that mass.
 class LiturgyTodayCard extends StatefulWidget {
-  const LiturgyTodayCard({super.key, this.onSeeLiturgy});
+  const LiturgyTodayCard({
+    super.key,
+    this.liturgy,
+    this.nextMass,
+    this.onSeeLiturgy,
+  });
 
+  final LiturgyModel? liturgy;
+  final NextMassModel? nextMass;
   final VoidCallback? onSeeLiturgy;
 
   @override
@@ -16,11 +24,14 @@ class LiturgyTodayCard extends StatefulWidget {
 }
 
 class _LiturgyTodayCardState extends State<LiturgyTodayCard> {
-  // Mass times used by the mockup: 09:30, 11:00, 18:30.
-  static const List<(int, int)> _massTimes = [(9, 30), (11, 0), (18, 30)];
+  static const _days = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI', 'DIMANCHE'];
+  static const _months = [
+    'JANVIER', 'FÉVRIER', 'MARS', 'AVRIL', 'MAI', 'JUIN',
+    'JUILLET', 'AOÛT', 'SEPTEMBRE', 'OCTOBRE', 'NOVEMBRE', 'DÉCEMBRE',
+  ];
 
   Timer? _timer;
-  String _countdown = '—h —min';
+  String _countdown = '—';
 
   @override
   void initState() {
@@ -36,34 +47,45 @@ class _LiturgyTodayCardState extends State<LiturgyTodayCard> {
   }
 
   void _updateCountdown() {
-    final now = DateTime.now();
-    DateTime? next;
-    for (final (h, m) in _massTimes) {
-      final candidate = DateTime(now.year, now.month, now.day, h, m);
-      if (candidate.isAfter(now)) {
-        next = candidate;
-        break;
-      }
-    }
-    final String value;
-    if (next == null) {
-      value = 'Terminé';
+    final at = widget.nextMass?.at;
+    String value;
+    if (at == null) {
+      value = '—';
     } else {
-      final diff = next.difference(now);
-      final h = diff.inHours;
-      final m = diff.inMinutes % 60;
-      final s = diff.inSeconds % 60;
-      value = h > 0
-          ? '${h}h ${m.toString().padLeft(2, '0')}min'
-          : '${m}min ${s.toString().padLeft(2, '0')}s';
+      final diff = at.difference(DateTime.now());
+      if (diff.isNegative) {
+        value = 'En cours';
+      } else if (diff.inHours >= 24) {
+        value = '${diff.inDays}j ${diff.inHours % 24}h';
+      } else if (diff.inHours > 0) {
+        value = '${diff.inHours}h ${(diff.inMinutes % 60).toString().padLeft(2, '0')}min';
+      } else {
+        value = '${diff.inMinutes}min ${(diff.inSeconds % 60).toString().padLeft(2, '0')}s';
+      }
     }
     if (mounted && value != _countdown) {
       setState(() => _countdown = value);
     }
   }
 
+  Color get _seasonColor => switch (widget.liturgy?.color) {
+        'blanc' => const Color(0xFFE6C34A),
+        'rouge' => HomePalette.red,
+        'violet' => const Color(0xFF9C6ADE),
+        'rose' => const Color(0xFFE38AA8),
+        _ => HomePalette.green,
+      };
+
+  String get _dateLine {
+    final d = widget.liturgy?.date ?? DateTime.now();
+    return '${_days[d.weekday - 1]} · ${d.day} ${_months[d.month - 1]} ${d.year}';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final liturgy = widget.liturgy;
+    final nextMass = widget.nextMass;
+
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -75,7 +97,7 @@ class _LiturgyTodayCardState extends State<LiturgyTodayCard> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: HomePalette.navy.withValues(alpha:.6),
+            color: HomePalette.navy.withValues(alpha: .6),
             blurRadius: 32,
             offset: const Offset(0, 12),
             spreadRadius: -10,
@@ -87,34 +109,33 @@ class _LiturgyTodayCardState extends State<LiturgyTodayCard> {
         children: [
           Row(
             children: [
-              const Text(
-                'DIMANCHE · 6 JUILLET 2026',
-                style: TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1,
-                  color: HomePalette.gold,
+              Flexible(
+                child: Text(
+                  _dateLine,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1,
+                    color: HomePalette.gold,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
-              Expanded(child: Container(height: 1, color: HomePalette.gold.withValues(alpha:.25))),
+              Expanded(child: Container(height: 1, color: HomePalette.gold.withValues(alpha: .25))),
               const SizedBox(width: 8),
-              Container(
-                width: 7,
-                height: 7,
-                decoration: const BoxDecoration(color: HomePalette.green, shape: BoxShape.circle),
-              ),
+              Container(width: 7, height: 7, decoration: BoxDecoration(color: _seasonColor, shape: BoxShape.circle)),
               const SizedBox(width: 4),
-              const Text(
-                'Ordinaire',
-                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: HomePalette.green),
+              Text(
+                _capitalize(liturgy?.season ?? 'Liturgie'),
+                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: _seasonColor),
               ),
             ],
           ),
           const SizedBox(height: 14),
-          const Text(
-            '14ᵉ Dimanche du Temps Ordinaire',
-            style: TextStyle(
+          Text(
+            liturgy?.liturgicalDay ?? 'Liturgie du jour',
+            style: const TextStyle(
               fontSize: 19,
               fontWeight: FontWeight.w800,
               color: Colors.white,
@@ -127,78 +148,90 @@ class _LiturgyTodayCardState extends State<LiturgyTodayCard> {
             height: 1,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: [HomePalette.gold.withValues(alpha:.5), HomePalette.gold.withValues(alpha:.08)],
+                colors: [HomePalette.gold.withValues(alpha: .5), HomePalette.gold.withValues(alpha: .08)],
               ),
             ),
           ),
           const SizedBox(height: 14),
-          const Row(
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: _InfoTile(label: 'ÉVANGILE', value: 'Lc 10, 1-12', sub: 'Mission des 72')),
-              SizedBox(width: 10),
-              Expanded(child: _InfoTile(label: 'SAINT DU JOUR', value: 'Saint Goar', sub: 'Ermite, IVᵉ s.')),
+              Expanded(
+                child: _InfoTile(
+                  label: 'ÉVANGILE',
+                  value: liturgy?.gospelRef ?? '—',
+                  sub: liturgy?.gospelTitle ?? '',
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _InfoTile(
+                  label: 'TEMPS',
+                  value: _capitalize(liturgy?.season ?? '—'),
+                  sub: liturgy?.week ?? '',
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 14),
-          Container(height: 1, color: Colors.white.withValues(alpha:.07)),
+          Container(height: 1, color: Colors.white.withValues(alpha: .07)),
           const SizedBox(height: 14),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'PROCHAINE MESSE',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: .7,
-                      color: Colors.white.withValues(alpha:.45),
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  const Text(
-                    '09h30',
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                      height: 1,
-                      letterSpacing: -.5,
-                    ),
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  color: HomePalette.gold.withValues(alpha:.18),
-                  border: Border.all(color: HomePalette.gold.withValues(alpha:.4)),
-                  borderRadius: BorderRadius.circular(14),
-                ),
+              Expanded(
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'dans',
-                      style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w600, color: Colors.white.withValues(alpha:.5)),
+                      nextMass == null ? 'HORAIRES DE MESSE' : 'PROCHAINE MESSE',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: .7,
+                        color: Colors.white.withValues(alpha: .45),
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      _countdown,
-                      style: const TextStyle(
-                        fontSize: 17,
+                      nextMass?.time ?? 'À définir',
+                      style: TextStyle(
+                        fontSize: nextMass == null ? 15 : 26,
                         fontWeight: FontWeight.w800,
-                        color: HomePalette.gold,
-                        letterSpacing: -.3,
+                        color: Colors.white,
+                        height: 1,
+                        letterSpacing: -.5,
                       ),
                     ),
+                    if (nextMass != null)
+                      Text(
+                        '${nextMass.dayLabel}${nextMass.label != null ? ' · ${nextMass.label}' : ''}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: .5)),
+                      ),
                   ],
                 ),
               ),
+              if (nextMass != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: HomePalette.gold.withValues(alpha: .18),
+                    border: Border.all(color: HomePalette.gold.withValues(alpha: .4)),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Column(
+                    children: [
+                      Text('dans', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w600, color: Colors.white.withValues(alpha: .5))),
+                      const SizedBox(height: 2),
+                      Text(
+                        _countdown,
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: HomePalette.gold, letterSpacing: -.3),
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 14),
@@ -208,7 +241,7 @@ class _LiturgyTodayCardState extends State<LiturgyTodayCard> {
             child: OutlinedButton(
               onPressed: widget.onSeeLiturgy,
               style: OutlinedButton.styleFrom(
-                side: BorderSide(color: HomePalette.gold.withValues(alpha:.55), width: 1.5),
+                side: BorderSide(color: HomePalette.gold.withValues(alpha: .55), width: 1.5),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 foregroundColor: HomePalette.gold,
                 padding: EdgeInsets.zero,
@@ -216,10 +249,7 @@ class _LiturgyTodayCardState extends State<LiturgyTodayCard> {
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    'Voir toute la liturgie',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: HomePalette.gold),
-                  ),
+                  Text('Voir les lectures du jour', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: HomePalette.gold)),
                   SizedBox(width: 6),
                   Icon(Icons.arrow_forward_rounded, size: 15, color: HomePalette.gold),
                 ],
@@ -230,6 +260,8 @@ class _LiturgyTodayCardState extends State<LiturgyTodayCard> {
       ),
     );
   }
+
+  static String _capitalize(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 }
 
 class _InfoTile extends StatelessWidget {
@@ -244,20 +276,17 @@ class _InfoTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha:.07),
+        color: Colors.white.withValues(alpha: .07),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, letterSpacing: .8, color: HomePalette.gold),
-          ),
+          Text(label, style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, letterSpacing: .8, color: HomePalette.gold)),
           const SizedBox(height: 5),
-          Text(value, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: Colors.white)),
+          Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: Colors.white)),
           const SizedBox(height: 2),
-          Text(sub, style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha:.5))),
+          Text(sub, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: .5))),
         ],
       ),
     );

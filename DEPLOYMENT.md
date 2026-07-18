@@ -127,6 +127,22 @@ Connexion admin paroisse : `https://admin.votre-domaine.com/admin/login`
 
 ---
 
+## 5b. Tâche planifiée (liturgie automatique)
+
+Pour que la liturgie du jour se synchronise automatiquement depuis AELF, ajoutez
+un **cron** dans hPanel → **Avancé → Tâches Cron** :
+
+- Fréquence : **chaque minute** (`* * * * *`)
+- Commande :
+  ```
+  cd ~/apps/ecclesia && /usr/bin/php artisan schedule:run >> ~/apps/ecclesia/storage/logs/schedule.log 2>&1
+  ```
+
+> Ce n'est pas strictement obligatoire : l'API récupère aussi la liturgie à la
+> demande (lazy-fetch) si un jour manque. Le cron ne fait que la pré-remplir.
+
+---
+
 ## 6. Application mobile Flutter
 
 Pointez la base d'URL de l'API vers le domaine déployé dans
