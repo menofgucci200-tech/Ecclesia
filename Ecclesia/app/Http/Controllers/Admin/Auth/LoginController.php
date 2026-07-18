@@ -44,14 +44,17 @@ class LoginController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        // The field accepts either an e-mail (super admins) or a login/username
-        // (parish admins). Resolve which column to authenticate against.
+        // The field accepts either a login/username (parish admins) or an
+        // e-mail (super admins). Try the username column first, then e-mail —
+        // this stays correct whatever the login looks like.
         $identifier = (string) $request->input('email');
-        $field = filter_var($identifier, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+        $password = $request->input('password');
+        $remember = $request->boolean('remember');
 
-        $credentials = [$field => $identifier, 'password' => $request->input('password')];
+        $authenticated = Auth::attempt(['username' => $identifier, 'password' => $password], $remember)
+            || Auth::attempt(['email' => $identifier, 'password' => $password], $remember);
 
-        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
+        if (! $authenticated) {
             throw ValidationException::withMessages([
                 'email' => 'Ces identifiants ne correspondent à aucun compte.',
             ]);

@@ -32,7 +32,8 @@ class ParishRequest extends FormRequest
             'subscription_amount' => ['required', 'integer', 'min:0', 'max:100000000'],
             'login' => [
                 $isCreate ? 'required' : 'nullable',
-                'string', 'alpha_dash', 'min:3', 'max:50',
+                'string', 'min:3', 'max:50',
+                'regex:/^[A-Za-z0-9@._+\-]+$/',
                 Rule::unique('users', 'username')->ignore($adminUserId),
             ],
             'password' => [$isCreate ? 'required' : 'nullable', 'string', 'min:6', 'max:255'],
@@ -71,7 +72,7 @@ class ParishRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'login.alpha_dash' => 'Le login ne peut contenir que des lettres, chiffres, tirets et underscores (sans espace).',
+            'login.regex' => 'Le login ne doit pas contenir d\'espace (lettres, chiffres et @ . _ - + autorisés).',
         ];
     }
 
