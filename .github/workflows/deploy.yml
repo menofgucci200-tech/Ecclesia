@@ -1,0 +1,99 @@
+name: Déploiement Hostinger (backend Laravel)
+
+# Déploie l'API + le dashboard d'administration (dossier Ecclesia/) sur
+# l'hébergement mutualisé Hostinger à chaque push sur main.
+# Les secrets requis sont documentés dans DEPLOYMENT.md.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Ecclesia/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build & déploiement
+    runs-on: ubuntu-latest
+
+    # Toutes les commandes s'exécutent dans le dossier de l'app Laravel.
+    defaults:
+      run:
+        working-directory: Ecclesia
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Configurer PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, bcmath, pdo_mysql, curl, openssl, tokenizer, xml, ctype, fileinfo, dom
+          coverage: none
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: Ecclesia/vendor
+          key: composer-${{ hashFiles('Ecclesia/composer.lock') }}
+          restore-keys: composer-
+
+      - name: Installer les dépendances PHP (prod)
+        run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --no-progress
+
+      - name: Configurer Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: Ecclesia/package-lock.json
+
+      - name: Compiler les assets (Vite/Tailwind)
+        run: |
+          npm ci
+          npm run build
+
+      - name: Retirer node_modules (inutile en prod)
+        run: rm -rf node_modules
+
+      - name: Préparer la clé SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -p "${{ secrets.SSH_PORT }}" -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Déployer via rsync
+        run: |
+          rsync -rzq --delete \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='node_modules' \
+            --exclude='.env' \
+            --exclude='/storage/app' \
+            --exclude='/storage/framework/cache' \
+            --exclude='/storage/framework/sessions' \
+            --exclude='/storage/framework/views' \
+            --exclude='/storage/logs' \
+            --exclude='/public/storage' \
+            --exclude='tests' \
+            -e "ssh -i ~/.ssh/id_deploy -p ${{ secrets.SSH_PORT }} -o StrictHostKeyChecking=accept-new" \
+            ./ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/"
+
+      - name: Migrations & optimisations (sur le serveur)
+        run: |
+          ssh -i ~/.ssh/id_deploy -p "${{ secrets.SSH_PORT }}" -o StrictHostKeyChecking=accept-new \
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
+            "cd ${{ secrets.DEPLOY_PATH }} && \
+             php artisan migrate --force && \
+             php artisan storage:link || true && \
+             php artisan optimize:clear && \
+             php artisan config:cache && \
+             php artisan route:cache && \
+             php artisan view:cache"

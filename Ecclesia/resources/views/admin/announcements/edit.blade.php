@@ -1,0 +1,15 @@
+@extends('admin.layouts.app')
+
+@section('title', 'Modifier l\'annonce')
+@section('heading', 'Modifier l\'annonce')
+@section('subheading', $announcement->title)
+
+@section('actions')
+    <a href="{{ admin_route('announcements.index') }}" class="btn-ghost">
+        <x-icon name="chevron-left" class="h-4 w-4" /> Retour
+    </a>
+@endsection
+
+@section('content')
+    @include('admin.announcements._form')
+@endsection

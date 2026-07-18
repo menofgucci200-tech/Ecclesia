@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\Gender;
+use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -33,6 +34,7 @@ class User extends Authenticatable
         'parish_id',
         'parish_joined_at',
         'status',
+        'role',
     ];
 
     /**
@@ -58,6 +60,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'gender' => Gender::class,
             'status' => UserStatus::class,
+            'role' => UserRole::class,
         ];
     }
 
@@ -84,5 +87,27 @@ class User extends Authenticatable
     public function isActive(): bool
     {
         return $this->status === UserStatus::Active;
+    }
+
+    /**
+     * Whether the user may access the administration dashboard.
+     */
+    public function isStaff(): bool
+    {
+        return $this->role instanceof UserRole && $this->role->isStaff();
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === UserRole::SuperAdmin;
+    }
+
+    /**
+     * A super admin manages every parish; a parish admin is scoped to their own.
+     * Returns null when the admin has platform-wide scope.
+     */
+    public function managedParishId(): ?int
+    {
+        return $this->isSuperAdmin() ? null : $this->parish_id;
     }
 }

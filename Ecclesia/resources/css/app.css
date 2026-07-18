@@ -5,7 +5,117 @@
 @source '../**/*.blade.php';
 @source '../**/*.js';
 
+/*
+|--------------------------------------------------------------------------
+| Ecclesia — Design tokens
+|--------------------------------------------------------------------------
+| Brand palette from the visual identity guide:
+| Bleu Marial (navy) · Or Liturgique (gold) · Blanc.
+| Typography: Inter (interface) · Merriweather (scripture / institutional).
+*/
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+    --font-serif: 'Merriweather', ui-serif, Georgia, serif;
+
+    /* Bleu Marial */
+    --color-navy: #16335b;
+    --color-navy-dark: #0f2647;
+    --color-navy-light: #2b4e7e;
+
+    /* Or Liturgique */
+    --color-gold: #c6a02c;
+    --color-gold-light: #e3b94a;
+    --color-gold-soft: #f6eecf;
+
+    /* Neutres */
+    --color-surface: #ffffff;
+    --color-surface-muted: #f4f6f9;
+    --color-canvas: #f1f4f9;
+    --color-border-soft: #e2e8f0;
+    --color-border-strong: #cbd5e1;
+
+    /* Texte */
+    --color-ink: #1f2a44;
+    --color-ink-soft: #6b7280;
+    --color-ink-faint: #9ca3af;
+
+    /* Feedback */
+    --color-success: #1fa463;
+    --color-danger: #dc2626;
+    --color-warning: #d97706;
+    --color-info: #2563eb;
+}
+
+@layer base {
+    [x-cloak] { display: none !important; }
+
+    body {
+        background-color: var(--color-canvas);
+        color: var(--color-ink);
+        -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3, h4 {
+        color: var(--color-navy-dark);
+        font-weight: 800;
+        letter-spacing: -0.01em;
+    }
+}
+
+@layer components {
+    /* ---- Cards ---------------------------------------------------------- */
+    .card {
+        @apply rounded-2xl border border-[color:var(--color-border-soft)] bg-white shadow-[0_1px_2px_rgba(15,38,71,0.04),0_8px_24px_-16px_rgba(15,38,71,0.18)];
+    }
+    .card-pad { @apply p-5 sm:p-6; }
+
+    /* ---- Buttons (shared base across every variant) --------------------- */
+    .btn, .btn-primary, .btn-gold, .btn-ghost, .btn-outline, .btn-danger {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition
+               focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:var(--color-navy-light)]
+               disabled:opacity-60 disabled:pointer-events-none;
+    }
+    .btn-primary { @apply bg-[color:var(--color-navy)] text-white hover:bg-[color:var(--color-navy-dark)]; }
+    .btn-gold    { @apply bg-[color:var(--color-gold)] text-[color:var(--color-navy-dark)] hover:bg-[color:var(--color-gold-light)]; }
+    .btn-ghost   { @apply bg-transparent text-[color:var(--color-ink)] hover:bg-[color:var(--color-surface-muted)]; }
+    .btn-outline { @apply border border-[color:var(--color-border-strong)] bg-white text-[color:var(--color-ink)] hover:bg-[color:var(--color-surface-muted)]; }
+    .btn-danger  { @apply bg-[color:var(--color-danger)] text-white hover:brightness-95; }
+    .btn-sm      { @apply px-3 py-1.5 text-xs; }
+
+    /* ---- Form controls -------------------------------------------------- */
+    .field-label { @apply mb-1.5 block text-sm font-semibold text-[color:var(--color-ink)]; }
+    .field-hint  { @apply mt-1 text-xs text-[color:var(--color-ink-soft)]; }
+    .field-error { @apply mt-1 text-xs font-medium text-[color:var(--color-danger)]; }
+    .input, .select, .textarea {
+        @apply w-full rounded-xl border border-[color:var(--color-border-strong)] bg-white px-3.5 py-2.5 text-sm text-[color:var(--color-ink)]
+               placeholder:text-[color:var(--color-ink-faint)] transition
+               focus:border-[color:var(--color-navy-light)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-navy-light)]/25;
+    }
+    .textarea { @apply min-h-[120px] leading-relaxed; }
+
+    /* ---- Badges (shared base across every variant) --------------------- */
+    .badge, .badge-success, .badge-muted, .badge-danger, .badge-gold, .badge-navy {
+        @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold;
+    }
+    .badge-success { @apply bg-emerald-50 text-emerald-700; }
+    .badge-muted   { @apply bg-slate-100 text-slate-600; }
+    .badge-danger  { @apply bg-red-50 text-red-700; }
+    .badge-gold    { @apply bg-[color:var(--color-gold-soft)] text-[color:var(--color-navy-dark)]; }
+    .badge-navy    { @apply bg-[color:var(--color-navy)]/10 text-[color:var(--color-navy)]; }
+
+    /* ---- Sidebar nav ---------------------------------------------------- */
+    .nav-link {
+        @apply flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-white/70 transition
+               hover:bg-white/10 hover:text-white;
+    }
+    .nav-link-active { @apply bg-white/10 text-white shadow-inner; }
+
+    /* ---- Tables --------------------------------------------------------- */
+    .table-wrap { @apply overflow-x-auto; }
+    .data-table { @apply w-full text-left text-sm; }
+    .data-table thead th {
+        @apply whitespace-nowrap px-4 py-3 text-xs font-bold uppercase tracking-wide text-[color:var(--color-ink-soft)];
+    }
+    .data-table tbody td { @apply whitespace-nowrap px-4 py-3.5 align-middle border-t border-[color:var(--color-border-soft)]; }
+    .data-table tbody tr:hover { @apply bg-[color:var(--color-surface-muted)]/60; }
 }
