@@ -6,6 +6,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Tableau de bord') · Ecclesia</title>
 
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/logo.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Merriweather:ital@0;1&display=swap" rel="stylesheet">
@@ -24,12 +26,11 @@
     >
         <div class="flex h-full flex-col">
             {{-- Brand --}}
-            <div class="flex items-center gap-3 px-6 py-6">
-                <x-brand-mark class="h-10 w-10" />
-                <div class="leading-tight">
-                    <p class="font-serif text-lg font-bold text-white">Ecclesia</p>
-                    <p class="text-[11px] font-medium uppercase tracking-[0.18em] text-[color:var(--color-gold-light)]">Administration</p>
+            <div class="px-4 pb-2 pt-6">
+                <div class="rounded-2xl bg-white px-4 py-3 shadow-sm">
+                    <img src="{{ asset('images/logo.png') }}" alt="Ecclesia" class="mx-auto h-24 w-auto">
                 </div>
+                <p class="mt-3 text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-[color:var(--color-gold-light)]">Administration</p>
             </div>
 
             {{-- Nav --}}

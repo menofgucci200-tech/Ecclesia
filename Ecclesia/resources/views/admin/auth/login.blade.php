@@ -6,6 +6,8 @@
     @php($isSuper = ($area ?? 'admin') === 'super')
     <title>Connexion · Ecclesia {{ $isSuper ? 'Super Admin' : 'Espace Paroisse' }}</title>
 
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/logo.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Merriweather:ital@0;1&display=swap" rel="stylesheet">
@@ -23,12 +25,11 @@
         <div class="absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-[color:var(--color-gold)]/20 blur-3xl"></div>
 
         <div class="relative flex h-full flex-col justify-between p-12">
-            <div class="flex items-center gap-3">
-                <x-brand-mark class="h-11 w-11" />
-                <div class="leading-tight">
-                    <p class="font-serif text-xl font-bold text-white">Ecclesia</p>
-                    <p class="text-[11px] font-medium uppercase tracking-[0.18em] text-[color:var(--color-gold-light)]">{{ $isSuper ? 'Super administration' : 'Espace paroisse' }}</p>
+            <div class="flex items-center gap-4">
+                <div class="rounded-2xl bg-white p-2.5 shadow-lg">
+                    <img src="{{ asset('images/logo.png') }}" alt="Ecclesia" class="h-16 w-16 object-contain">
                 </div>
+                <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-gold-light)]">{{ $isSuper ? 'Super administration' : 'Espace paroisse' }}</p>
             </div>
 
             <div class="max-w-md">
@@ -45,9 +46,8 @@
     {{-- Form panel --}}
     <div class="flex items-center justify-center px-6 py-12">
         <div class="w-full max-w-sm">
-            <div class="mb-8 flex items-center gap-3 lg:hidden">
-                <x-brand-mark class="h-10 w-10" />
-                <p class="font-serif text-xl font-bold text-[color:var(--color-navy-dark)]">Ecclesia</p>
+            <div class="mb-8 flex justify-center lg:hidden">
+                <img src="{{ asset('images/logo.png') }}" alt="Ecclesia" class="h-28 w-auto">
             </div>
 
             <span class="mb-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold {{ $isSuper ? 'bg-[color:var(--color-gold-soft)] text-[color:var(--color-navy-dark)]' : 'bg-[color:var(--color-navy)]/10 text-[color:var(--color-navy)]' }}">
