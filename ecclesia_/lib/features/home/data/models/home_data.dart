@@ -8,6 +8,7 @@ class HomeData {
     this.massTimes = const [],
     this.nextMass,
     this.announcement,
+    this.events = const [],
     this.quote,
   });
 
@@ -16,6 +17,7 @@ class HomeData {
   final List<MassTimeModel> massTimes;
   final NextMassModel? nextMass;
   final AnnouncementModel? announcement;
+  final List<AgendaEvent> events;
   final QuoteModel? quote;
 
   factory HomeData.fromJson(Map<String, dynamic> json) {
@@ -34,11 +36,53 @@ class HomeData {
       announcement: json['announcement'] == null
           ? null
           : AnnouncementModel.fromJson(json['announcement'] as Map<String, dynamic>),
+      events: (json['events'] as List<dynamic>? ?? const [])
+          .map((e) => AgendaEvent.fromJson(e as Map<String, dynamic>))
+          .toList(),
       quote: json['quote'] == null
           ? null
           : QuoteModel.fromJson(json['quote'] as Map<String, dynamic>),
     );
   }
+}
+
+/// A single agenda item: a major liturgical feast or a parish event.
+class AgendaEvent {
+  const AgendaEvent({
+    required this.type,
+    required this.date,
+    required this.title,
+    this.time,
+    this.subtitle,
+    this.color,
+    this.grade = 0,
+    this.location,
+    this.description,
+  });
+
+  final String type; // 'liturgical' | 'parish'
+  final DateTime date;
+  final String title;
+  final String? time;
+  final String? subtitle;
+  final String? color;
+  final int grade;
+  final String? location;
+  final String? description;
+
+  bool get isParish => type == 'parish';
+
+  factory AgendaEvent.fromJson(Map<String, dynamic> json) => AgendaEvent(
+        type: json['type'] as String? ?? 'liturgical',
+        date: DateTime.tryParse(json['date'] as String? ?? '') ?? DateTime.now(),
+        title: json['title'] as String? ?? '',
+        time: json['time'] as String?,
+        subtitle: json['subtitle'] as String?,
+        color: json['color'] as String?,
+        grade: (json['grade'] as num?)?.toInt() ?? 0,
+        location: json['location'] as String?,
+        description: json['description'] as String?,
+      );
 }
 
 class LiturgyModel {

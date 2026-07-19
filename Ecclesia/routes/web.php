@@ -6,10 +6,12 @@ use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\Admin\Auth\LoginController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\HomeController;
+use App\Http\Controllers\Admin\LiturgicalCalendarController;
 use App\Http\Controllers\Admin\LiturgyController;
 use App\Http\Controllers\Admin\MassTimeController;
 use App\Http\Controllers\Admin\MemberController;
 use App\Http\Controllers\Admin\ParishController;
+use App\Http\Controllers\Admin\ParishEventController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
@@ -42,6 +44,9 @@ $sharedAdminRoutes = function (string $roleScope): void {
         Route::post('mass-times', [MassTimeController::class, 'store'])->name('mass-times.store');
         Route::patch('mass-times/{massTime}', [MassTimeController::class, 'update'])->name('mass-times.update');
         Route::delete('mass-times/{massTime}', [MassTimeController::class, 'destroy'])->name('mass-times.destroy');
+
+        // Parish events (agenda) managed by the parish admin.
+        Route::resource('events', ParishEventController::class)->except(['show']);
     });
 };
 
@@ -78,5 +83,10 @@ Route::prefix('super')->name('super.')->group(function () use ($authRoutes, $sha
         Route::patch('liturgies/{liturgy}/toggle', [LiturgyController::class, 'toggle'])->name('liturgies.toggle');
         Route::post('liturgies/{liturgy}/resync', [LiturgyController::class, 'resync'])->name('liturgies.resync');
         Route::post('liturgies/sync-upcoming', [LiturgyController::class, 'syncUpcoming'])->name('liturgies.sync-upcoming');
+
+        // Liturgical calendar (major feasts from LitCal).
+        Route::get('calendar', [LiturgicalCalendarController::class, 'index'])->name('calendar.index');
+        Route::patch('calendar/{event}/toggle', [LiturgicalCalendarController::class, 'toggle'])->name('calendar.toggle');
+        Route::post('calendar/resync', [LiturgicalCalendarController::class, 'resync'])->name('calendar.resync');
     });
 });

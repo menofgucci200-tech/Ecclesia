@@ -10,6 +10,7 @@ use App\Http\Resources\LiturgyResource;
 use App\Http\Resources\MassTimeResource;
 use App\Models\Announcement;
 use App\Models\User;
+use App\Services\AgendaService;
 use App\Services\LiturgyService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,6 +19,7 @@ class HomeController extends Controller
 {
     public function __construct(
         private readonly LiturgyService $liturgy,
+        private readonly AgendaService $agenda,
     ) {}
 
     /**
@@ -61,6 +63,7 @@ class HomeController extends Controller
             'mass_times' => MassTimeResource::collection($massTimes),
             'next_mass' => $this->nextMass($massTimes),
             'announcement' => $announcement ? AnnouncementResource::make($announcement) : null,
+            'events' => $this->agenda->upcoming($parish?->id, now()->startOfDay(), now()->addDays(90))->take(6)->values(),
             'quote' => $this->quoteOfTheDay($liturgy),
         ]);
     }

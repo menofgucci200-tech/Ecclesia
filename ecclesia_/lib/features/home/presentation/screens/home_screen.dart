@@ -8,9 +8,11 @@ import '../../../../router/app_routes.dart';
 import '../../../announcement/data/models/announcement_model.dart';
 import '../../../announcement/presentation/announcement_visuals.dart';
 import '../../../announcement/presentation/providers/parish_feed_provider.dart';
+import '../../data/models/home_data.dart';
 import '../providers/home_provider.dart';
 import '../screens/liturgy_screen.dart';
 import '../theme/home_palette.dart';
+import '../widgets/agenda_view.dart';
 import '../widgets/home_bottom_nav.dart';
 import '../widgets/home_sections.dart';
 import '../widgets/liturgy_today_card.dart';
@@ -67,7 +69,11 @@ class _HomeScreenState extends State<HomeScreen> {
               onNotif: () => _comingSoon('Notifications'),
             ),
             Expanded(
-              child: _tab == 0 ? _HomeFeed(onComingSoon: _comingSoon) : _TabPlaceholder(index: _tab),
+              child: _tab == 0
+                  ? _HomeFeed(onComingSoon: _comingSoon)
+                  : _tab == 3
+                      ? const AgendaView()
+                      : _TabPlaceholder(index: _tab),
             ),
           ],
         ),
@@ -158,6 +164,31 @@ class _IconButton extends StatelessWidget {
   }
 }
 
+/// Builds a compact "upcoming event" card from a real agenda item.
+Widget _eventCardFrom(AgendaEvent e) {
+  const monthsAbbr = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+  final now = DateTime.now();
+  final days = DateTime(e.date.year, e.date.month, e.date.day)
+      .difference(DateTime(now.year, now.month, now.day))
+      .inDays;
+  final badge = days <= 0 ? "Aujourd'hui" : days == 1 ? 'Demain' : 'Dans $days jours';
+  final dateLabel = '${e.date.day} ${monthsAbbr[e.date.month - 1]}${e.time != null ? ' · ${e.time}' : ''}';
+  final isParish = e.isParish;
+
+  return EventMiniCard(
+    headerColors: isParish
+        ? const [Color(0xFF0D3B66), Color(0xFF1A6B9E), Color(0xFF3A9BCF)]
+        : const [Color(0xFF7A5C10), Color(0xFFB8901E), Color(0xFFD4AF37)],
+    icon: isParish ? Icons.groups_outlined : Icons.church_outlined,
+    dateLabel: dateLabel,
+    accent: isParish ? const Color(0xFF1A6B9E) : const Color(0xFFB8901E),
+    title: e.title,
+    place: e.location ?? e.subtitle ?? (isParish ? 'Paroisse' : 'Fête liturgique'),
+    badgeText: badge,
+    badgeBg: isParish ? const Color(0xFFEEF5FB) : const Color(0xFFFBF3DD),
+  );
+}
+
 class _HomeFeed extends ConsumerWidget {
   const _HomeFeed({required this.onComingSoon});
 
@@ -202,49 +233,28 @@ class _HomeFeed extends ConsumerWidget {
             child: SectionHeader(title: 'Événements à venir', onSeeAll: () => onComingSoon('Événements')),
           ),
           const SizedBox(height: 12),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: _hpad,
-            child: const IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  EventMiniCard(
-                    headerColors: [Color(0xFF7B1A1A), Color(0xFFB23030), Color(0xFFD45858)],
-                    icon: Icons.calendar_today_outlined,
-                    dateLabel: '12 juil. · 10h00',
-                    accent: Color(0xFFB23030),
-                    title: 'Fête patronale',
-                    place: 'Cathédrale',
-                    badgeText: 'Dans 6 jours',
-                    badgeBg: Color(0xFFFEF2F2),
-                  ),
-                  SizedBox(width: 12),
-                  EventMiniCard(
-                    headerColors: [Color(0xFF3D1A78), Color(0xFF6B3AAA), Color(0xFF9B6BDD)],
-                    icon: Icons.music_note,
-                    dateLabel: '19 juil. · 18h00',
-                    accent: Color(0xFF6B3AAA),
-                    title: 'Concert de la chorale',
-                    place: 'Salle paroissiale',
-                    badgeText: 'Dans 13 jours',
-                    badgeBg: Color(0xFFF5EEFF),
-                  ),
-                  SizedBox(width: 12),
-                  EventMiniCard(
-                    headerColors: [Color(0xFF0D3B66), Color(0xFF1A6B9E), Color(0xFF3A9BCF)],
-                    icon: Icons.home_outlined,
-                    dateLabel: '2 août · 6h00',
-                    accent: Color(0xFF1A6B9E),
-                    title: 'Pèlerinage Yamoussoukro',
-                    place: 'Bus paroissial',
-                    badgeText: 'Dans 27 jours',
-                    badgeBg: Color(0xFFEEF5FB),
-                  ),
-                ],
+          if ((home?.events ?? const []).isEmpty)
+            Padding(
+              padding: _hpad,
+              child: Text('Aucun événement à venir pour le moment.',
+                  style: TextStyle(fontSize: 13, color: HomePalette.textBody)),
+            )
+          else
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: _hpad,
+              child: IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (final e in home!.events.take(8)) ...[
+                      _eventCardFrom(e),
+                      const SizedBox(width: 12),
+                    ],
+                  ],
+                ),
               ),
             ),
-          ),
           const SizedBox(height: 20),
           Padding(
             padding: _hpad,

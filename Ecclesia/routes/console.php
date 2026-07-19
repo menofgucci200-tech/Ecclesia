@@ -10,3 +10,6 @@ Artisan::command('inspire', function () {
 
 // Keep the liturgy up to date automatically (today + the next 2 days).
 Schedule::command('liturgy:sync --days=3')->dailyAt('04:00')->withoutOverlapping();
+
+// Refresh the yearly liturgical calendar (major feasts) from LitCal.
+Schedule::command('calendar:sync')->monthlyOn(1, '04:30')->withoutOverlapping();

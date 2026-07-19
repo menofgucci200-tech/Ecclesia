@@ -48,6 +48,9 @@
                     <a href="{{ admin_route('liturgies.index') }}" @class(['nav-link', 'nav-link-active' => admin_route_is('liturgies.*')])>
                         <x-icon name="book" class="h-5 w-5" /> Liturgie
                     </a>
+                    <a href="{{ admin_route('calendar.index') }}" @class(['nav-link', 'nav-link-active' => admin_route_is('calendar.*')])>
+                        <x-icon name="calendar" class="h-5 w-5" /> Calendrier
+                    </a>
                 @endif
                 <a href="{{ admin_route('members.index') }}" @class(['nav-link', 'nav-link-active' => admin_route_is('members.*')])>
                     <x-icon name="users" class="h-5 w-5" /> Fidèles
@@ -58,6 +61,9 @@
                 @if(auth()->user()->managedParishId() !== null)
                     <a href="{{ admin_route('mass-times.index') }}" @class(['nav-link', 'nav-link-active' => admin_route_is('mass-times.*')])>
                         <x-icon name="calendar" class="h-5 w-5" /> Horaires de messe
+                    </a>
+                    <a href="{{ admin_route('events.index') }}" @class(['nav-link', 'nav-link-active' => admin_route_is('events.*')])>
+                        <x-icon name="sparkles" class="h-5 w-5" /> Événements
                     </a>
                 @endif
             </nav>

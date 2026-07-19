@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\AgendaController;
 use App\Http\Controllers\Api\AnnouncementController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\HomeController;
@@ -51,4 +52,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Liturgy of the day (and any date) — auto-filled from AELF.
     Route::get('liturgy', [LiturgyController::class, 'today']);
     Route::get('liturgy/{date}', [LiturgyController::class, 'show'])->where('date', '\d{4}-\d{2}-\d{2}');
+
+    // Agenda — major liturgical feasts (LitCal) + parish events.
+    Route::get('agenda', [AgendaController::class, 'index']);
 });

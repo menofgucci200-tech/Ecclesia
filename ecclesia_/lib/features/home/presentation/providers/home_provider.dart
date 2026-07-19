@@ -13,3 +13,8 @@ final homeRemoteDataSourceProvider = Provider<HomeRemoteDataSource>(
 final homeProvider = FutureProvider.autoDispose<HomeData>(
   (ref) => ref.read(homeRemoteDataSourceProvider).fetchHome(),
 );
+
+/// The full agenda (major liturgical feasts + parish events).
+final agendaProvider = FutureProvider.autoDispose<List<AgendaEvent>>(
+  (ref) => ref.read(homeRemoteDataSourceProvider).fetchAgenda(),
+);

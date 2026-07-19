@@ -108,6 +108,16 @@ class Parish extends Model
     }
 
     /**
+     * Parish-specific events shown in the agenda.
+     *
+     * @return HasMany<ParishEvent, $this>
+     */
+    public function events(): HasMany
+    {
+        return $this->hasMany(ParishEvent::class)->orderBy('starts_at');
+    }
+
+    /**
      * The administrator account attached to this parish (scoped to /admin).
      *
      * @return HasOne<User, $this>
