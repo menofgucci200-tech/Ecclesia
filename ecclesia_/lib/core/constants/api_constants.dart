@@ -51,4 +51,11 @@ class ApiConstants {
   static const String liturgy = '/liturgy';
   static const String agenda = '/agenda';
   static String liturgyForDate(String date) => '/liturgy/$date';
+
+  // Movements (Vie & Foi).
+  static const String movements = '/movements';
+  static const String myMovements = '/my-movements';
+  static String movement(int id) => '/movements/$id';
+  static String movementJoin(int id) => '/movements/$id/join';
+  static String movementLeave(int id) => '/movements/$id/leave';
 }

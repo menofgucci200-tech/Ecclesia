@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\LiturgicalCalendarController;
 use App\Http\Controllers\Admin\LiturgyController;
 use App\Http\Controllers\Admin\MassTimeController;
 use App\Http\Controllers\Admin\MemberController;
+use App\Http\Controllers\Admin\MovementController;
 use App\Http\Controllers\Admin\ParishController;
 use App\Http\Controllers\Admin\ParishEventController;
 use Illuminate\Support\Facades\Route;
@@ -47,6 +48,9 @@ $sharedAdminRoutes = function (string $roleScope): void {
 
         // Parish events (agenda) managed by the parish admin.
         Route::resource('events', ParishEventController::class)->except(['show']);
+
+        // Parish movements (groups) managed by the parish admin.
+        Route::resource('movements', MovementController::class)->except(['show']);
     });
 };
 
@@ -64,6 +68,24 @@ $authRoutes = function (): void {
 Route::prefix('admin')->name('admin.')->group(function () use ($authRoutes, $sharedAdminRoutes) {
     $authRoutes();
     $sharedAdminRoutes('parish');
+});
+
+// ---- Movement leader area (/mouvement) ----------------------------------
+Route::prefix('mouvement')->name('mouvement.')->group(function () {
+    Route::middleware('guest')->group(function () {
+        Route::get('login', [\App\Http\Controllers\Movement\AuthController::class, 'show'])->name('login');
+        Route::post('login', [\App\Http\Controllers\Movement\AuthController::class, 'login'])->name('login.attempt');
+    });
+    Route::post('logout', [\App\Http\Controllers\Movement\AuthController::class, 'logout'])->name('logout');
+
+    Route::middleware('movement')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Movement\DashboardController::class, 'index'])->name('dashboard');
+        Route::resource('posts', \App\Http\Controllers\Movement\PostController::class)->except(['show']);
+        Route::get('documents', [\App\Http\Controllers\Movement\DocumentController::class, 'index'])->name('documents.index');
+        Route::post('documents', [\App\Http\Controllers\Movement\DocumentController::class, 'store'])->name('documents.store');
+        Route::delete('documents/{document}', [\App\Http\Controllers\Movement\DocumentController::class, 'destroy'])->name('documents.destroy');
+        Route::get('members', [\App\Http\Controllers\Movement\MemberController::class, 'index'])->name('members.index');
+    });
 });
 
 // ---- Super administrator area (/super) ----------------------------------

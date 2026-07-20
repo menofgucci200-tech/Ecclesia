@@ -23,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // The administration dashboard is a classic session-based web area.
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
+            'movement' => \App\Http\Middleware\EnsureMovementAdmin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

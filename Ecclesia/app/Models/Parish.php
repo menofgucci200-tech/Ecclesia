@@ -118,6 +118,16 @@ class Parish extends Model
     }
 
     /**
+     * The movements (groups) of this parish.
+     *
+     * @return HasMany<Movement, $this>
+     */
+    public function movements(): HasMany
+    {
+        return $this->hasMany(Movement::class)->orderBy('name');
+    }
+
+    /**
      * The administrator account attached to this parish (scoped to /admin).
      *
      * @return HasOne<User, $this>

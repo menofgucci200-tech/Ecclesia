@@ -12,6 +12,9 @@ enum UserRole: string
     /** A parish administrator, scoped to a single parish. */
     case Admin = 'admin';
 
+    /** A movement leader, scoped to a single movement. */
+    case MovementAdmin = 'movement_admin';
+
     /** A platform administrator with access to every parish. */
     case SuperAdmin = 'super_admin';
 
@@ -20,12 +23,13 @@ enum UserRole: string
         return match ($this) {
             self::Member => 'Fidèle',
             self::Admin => 'Administrateur de paroisse',
+            self::MovementAdmin => 'Responsable de mouvement',
             self::SuperAdmin => 'Super administrateur',
         };
     }
 
     /**
-     * Whether the role may access the administration dashboard.
+     * Whether the role may access the parish administration dashboard.
      */
     public function isStaff(): bool
     {

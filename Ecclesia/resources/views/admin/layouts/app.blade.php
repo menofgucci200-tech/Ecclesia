@@ -65,6 +65,9 @@
                     <a href="{{ admin_route('events.index') }}" @class(['nav-link', 'nav-link-active' => admin_route_is('events.*')])>
                         <x-icon name="sparkles" class="h-5 w-5" /> Événements
                     </a>
+                    <a href="{{ admin_route('movements.index') }}" @class(['nav-link', 'nav-link-active' => admin_route_is('movements.*')])>
+                        <x-icon name="users" class="h-5 w-5" /> Mouvements
+                    </a>
                 @endif
             </nav>
 

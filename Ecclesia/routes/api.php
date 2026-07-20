@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\AnnouncementController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\HomeController;
 use App\Http\Controllers\Api\LiturgyController;
+use App\Http\Controllers\Api\MovementController;
 use App\Http\Controllers\Api\ParishController;
 use App\Http\Controllers\Api\UserParishController;
 use Illuminate\Support\Facades\Route;
@@ -55,4 +56,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Agenda — major liturgical feasts (LitCal) + parish events.
     Route::get('agenda', [AgendaController::class, 'index']);
+
+    // Movements (groups) — list, detail, join/leave, mine.
+    Route::get('movements', [MovementController::class, 'index']);
+    Route::get('my-movements', [MovementController::class, 'mine']);
+    Route::get('movements/{movement}', [MovementController::class, 'show'])->whereNumber('movement');
+    Route::post('movements/{movement}/join', [MovementController::class, 'join'])->whereNumber('movement');
+    Route::delete('movements/{movement}/leave', [MovementController::class, 'leave'])->whereNumber('movement');
 });

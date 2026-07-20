@@ -33,6 +33,7 @@ class User extends Authenticatable
         'username',
         'password',
         'parish_id',
+        'movement_id',
         'parish_joined_at',
         'status',
         'role',
@@ -75,6 +76,26 @@ class User extends Authenticatable
         return $this->belongsTo(Parish::class);
     }
 
+    /**
+     * The movement this user leads (movement admins only).
+     *
+     * @return BelongsTo<Movement, $this>
+     */
+    public function movement(): BelongsTo
+    {
+        return $this->belongsTo(Movement::class);
+    }
+
+    /**
+     * The movements the faithful has joined.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany<Movement, $this>
+     */
+    public function movements(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Movement::class)->withTimestamps()->withPivot('joined_at');
+    }
+
     public function fullName(): string
     {
         return trim("{$this->first_name} {$this->last_name}");
@@ -101,6 +122,19 @@ class User extends Authenticatable
     public function isSuperAdmin(): bool
     {
         return $this->role === UserRole::SuperAdmin;
+    }
+
+    public function isMovementAdmin(): bool
+    {
+        return $this->role === UserRole::MovementAdmin;
+    }
+
+    /**
+     * The movement this account manages, or null.
+     */
+    public function managedMovementId(): ?int
+    {
+        return $this->isMovementAdmin() ? $this->movement_id : null;
     }
 
     /**

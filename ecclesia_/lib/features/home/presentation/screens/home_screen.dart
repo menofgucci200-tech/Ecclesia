@@ -8,6 +8,11 @@ import '../../../../router/app_routes.dart';
 import '../../../announcement/data/models/announcement_model.dart';
 import '../../../announcement/presentation/announcement_visuals.dart';
 import '../../../announcement/presentation/providers/parish_feed_provider.dart';
+import '../../../life/presentation/screens/life_faith_screen.dart';
+import '../../../movements/data/models/movement.dart';
+import '../../../movements/presentation/providers/movements_provider.dart';
+import '../../../movements/presentation/screens/movement_detail_screen.dart';
+import '../../../movements/presentation/screens/movements_screen.dart';
 import '../../data/models/home_data.dart';
 import '../providers/home_provider.dart';
 import '../screens/liturgy_screen.dart';
@@ -75,11 +80,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               onNotif: () => _comingSoon('Notifications'),
             ),
             Expanded(
-              child: _tab == 0
-                  ? _HomeFeed(onComingSoon: _comingSoon)
-                  : _tab == 3
-                      ? AgendaView(seasonColor: season.primary)
-                      : _TabPlaceholder(index: _tab),
+              child: switch (_tab) {
+                0 => _HomeFeed(onComingSoon: _comingSoon),
+                1 => const LifeFaithScreen(),
+                3 => AgendaView(seasonColor: season.primary),
+                _ => _TabPlaceholder(index: _tab),
+              },
             ),
           ],
         ),
@@ -178,6 +184,53 @@ class _IconButton extends StatelessWidget {
   }
 }
 
+/// A chip for one of the faithful's movements, shown in "Mes activités".
+class _MyMovementChip extends StatelessWidget {
+  const _MyMovementChip({required this.movement});
+
+  final Movement movement;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => MovementDetailScreen(id: movement.id, name: movement.name)),
+      ),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: 180,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: HomePalette.cardBg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: HomePalette.cardBorder),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40, height: 40, clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(color: HomePalette.navy.withValues(alpha: .08), borderRadius: BorderRadius.circular(11)),
+              child: movement.logoUrl != null
+                  ? Image.network(movement.logoUrl!, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.groups_outlined, size: 20, color: HomePalette.navy))
+                  : const Icon(Icons.groups_outlined, size: 20, color: HomePalette.navy),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(movement.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: HomePalette.navy)),
+                  Text(movement.category ?? 'Mouvement', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: HomePalette.textBody)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// Builds a compact "upcoming event" card from a real agenda item.
 Widget _eventCardFrom(AgendaEvent e) {
   const monthsAbbr = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
@@ -214,11 +267,13 @@ class _HomeFeed extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final feedAsync = ref.watch(parishFeedProvider);
     final home = ref.watch(homeProvider).asData?.value;
+    final myMovements = ref.watch(myMovementsProvider).asData?.value ?? const <Movement>[];
 
     return RefreshIndicator(
       color: HomePalette.navy,
       onRefresh: () async {
         ref.invalidate(homeProvider);
+        ref.invalidate(myMovementsProvider);
         ref.invalidate(parishFeedProvider);
         await ref.read(parishFeedProvider.future);
       },
@@ -272,10 +327,28 @@ class _HomeFeed extends ConsumerWidget {
           const SizedBox(height: 20),
           Padding(
             padding: _hpad,
-            child: SectionHeader(title: 'Mes activités', onSeeAll: () => onComingSoon('Mes activités')),
+            child: SectionHeader(
+              title: 'Mes activités',
+              onSeeAll: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MovementsScreen())),
+            ),
           ),
           const SizedBox(height: 12),
-          const Padding(padding: _hpad, child: MyActivitiesCard()),
+          if (myMovements.isEmpty)
+            Padding(
+              padding: _hpad,
+              child: Text('Rejoignez un mouvement dans « Vie & Foi » pour le retrouver ici.',
+                  style: const TextStyle(fontSize: 13, color: HomePalette.textBody)),
+            )
+          else
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: _hpad,
+              child: Row(
+                children: [
+                  for (final m in myMovements) ...[_MyMovementChip(movement: m), const SizedBox(width: 12)],
+                ],
+              ),
+            ),
           const SizedBox(height: 18),
           Padding(
             padding: _hpad,
