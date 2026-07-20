@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\Admin\Auth\LoginController;
+use App\Http\Controllers\Admin\CampaignController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\HomeController;
 use App\Http\Controllers\Admin\LiturgicalCalendarController;
@@ -51,6 +52,9 @@ $sharedAdminRoutes = function (string $roleScope): void {
 
         // Parish movements (groups) managed by the parish admin.
         Route::resource('movements', MovementController::class)->except(['show']);
+
+        // Fundraising campaigns (dons / cotisations / quêtes).
+        Route::resource('campaigns', CampaignController::class)->except(['show']);
     });
 };
 

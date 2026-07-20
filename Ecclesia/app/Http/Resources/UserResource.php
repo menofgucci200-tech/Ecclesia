@@ -27,6 +27,8 @@ class UserResource extends JsonResource
             'gender_label' => $this->gender->label(),
             'phone' => $this->phone,
             'email' => $this->email,
+            'avatar_url' => $this->avatar ? \Illuminate\Support\Facades\Storage::url($this->avatar) : null,
+            'preferences' => $this->preferences ?? new \stdClass(),
             'status' => $this->status->value,
             'has_parish' => $this->hasParish(),
             'parish_id' => $this->parish_id,

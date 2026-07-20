@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\HomeController;
 use App\Http\Controllers\Api\LiturgyController;
 use App\Http\Controllers\Api\MovementController;
 use App\Http\Controllers\Api\ParishController;
+use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\UserParishController;
 use Illuminate\Support\Facades\Route;
 
@@ -56,6 +57,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Agenda — major liturgical feasts (LitCal) + parish events.
     Route::get('agenda', [AgendaController::class, 'index']);
+
+    // Profile — edit identity/avatar and app preferences.
+    Route::post('profile', [ProfileController::class, 'update']);
+    Route::put('profile/preferences', [ProfileController::class, 'updatePreferences']);
+
+    // Fundraising campaigns (dons/cotisations/quêtes) of the parish.
+    Route::get('campaigns', [\App\Http\Controllers\Api\CampaignController::class, 'index']);
+    Route::post('campaigns/{campaign}/pledge', [\App\Http\Controllers\Api\CampaignController::class, 'pledge'])->whereNumber('campaign');
 
     // Movements (groups) — list, detail, join/leave, mine.
     Route::get('movements', [MovementController::class, 'index']);

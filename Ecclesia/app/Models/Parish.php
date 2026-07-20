@@ -128,6 +128,16 @@ class Parish extends Model
     }
 
     /**
+     * Fundraising campaigns of this parish.
+     *
+     * @return HasMany<Campaign, $this>
+     */
+    public function campaigns(): HasMany
+    {
+        return $this->hasMany(Campaign::class)->latest();
+    }
+
+    /**
      * The administrator account attached to this parish (scoped to /admin).
      *
      * @return HasOne<User, $this>

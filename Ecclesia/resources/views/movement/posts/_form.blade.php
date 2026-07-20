@@ -26,6 +26,11 @@
             @error('image') <p class="field-error">{{ $message }}</p> @enderror
         </div>
         <div>
+            <label class="field-label" for="video_url">Vidéo (lien YouTube / URL, optionnel)</label>
+            <input id="video_url" name="video_url" type="url" value="{{ old('video_url', $post->video_url) }}" class="input" placeholder="https://youtu.be/…">
+            @error('video_url') <p class="field-error">{{ $message }}</p> @enderror
+        </div>
+        <div>
             <label class="field-label" for="published_at">Date de publication</label>
             <input id="published_at" name="published_at" type="datetime-local" value="{{ $publishedValue }}" class="input">
             <p class="field-hint">Laisser vide pour un brouillon.</p>

@@ -68,6 +68,9 @@
                     <a href="{{ admin_route('movements.index') }}" @class(['nav-link', 'nav-link-active' => admin_route_is('movements.*')])>
                         <x-icon name="users" class="h-5 w-5" /> Mouvements
                     </a>
+                    <a href="{{ admin_route('campaigns.index') }}" @class(['nav-link', 'nav-link-active' => admin_route_is('campaigns.*')])>
+                        <x-icon name="gift" class="h-5 w-5" /> Dons & collectes
+                    </a>
                 @endif
             </nav>
 

@@ -80,6 +80,7 @@ class PostController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'body' => ['required', 'string'],
             'image' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
+            'video_url' => ['nullable', 'url', 'max:2048'],
             'published_at' => ['nullable', 'date'],
         ]);
     }

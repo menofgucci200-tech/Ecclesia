@@ -31,6 +31,8 @@ class User extends Authenticatable
         'phone',
         'email',
         'username',
+        'avatar',
+        'preferences',
         'password',
         'parish_id',
         'movement_id',
@@ -63,6 +65,7 @@ class User extends Authenticatable
             'gender' => Gender::class,
             'status' => UserStatus::class,
             'role' => UserRole::class,
+            'preferences' => 'array',
         ];
     }
 

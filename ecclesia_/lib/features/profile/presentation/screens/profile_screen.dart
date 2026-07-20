@@ -6,6 +6,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimens.dart';
 import '../../../../router/app_routes.dart';
 import '../../../auth/presentation/providers/session_controller.dart';
+import 'preferences_screen.dart';
+import 'profile_edit_screen.dart';
 
 /// The faithful's profile space: identity, parish and account actions.
 class ProfileScreen extends ConsumerWidget {
@@ -34,14 +36,13 @@ class ProfileScreen extends ConsumerWidget {
                 CircleAvatar(
                   radius: 40,
                   backgroundColor: AppColors.navy,
-                  child: Text(
-                    _initials(user?.firstName, user?.lastName),
-                    style: const TextStyle(
-                      color: AppColors.white,
-                      fontSize: 26,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                  backgroundImage: user?.avatarUrl != null ? NetworkImage(user!.avatarUrl!) : null,
+                  child: user?.avatarUrl == null
+                      ? Text(
+                          _initials(user?.firstName, user?.lastName),
+                          style: const TextStyle(color: AppColors.white, fontSize: 26, fontWeight: FontWeight.w700),
+                        )
+                      : null,
                 ),
                 const SizedBox(height: AppDimens.md),
                 Text(user?.fullName ?? '', style: theme.textTheme.titleLarge),
@@ -62,6 +63,16 @@ class ProfileScreen extends ConsumerWidget {
             onChange: () => context.push(AppRoutes.chooseParish),
           ),
           const SizedBox(height: AppDimens.lg),
+          _ActionTile(
+            icon: Icons.edit_outlined,
+            label: 'Éditer mon profil',
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProfileEditScreen())),
+          ),
+          _ActionTile(
+            icon: Icons.tune,
+            label: 'Personnaliser l\'application',
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PreferencesScreen())),
+          ),
           _ActionTile(
             icon: Icons.lock_reset,
             label: 'Changer mon mot de passe',

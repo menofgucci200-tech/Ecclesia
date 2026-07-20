@@ -8,6 +8,10 @@ import '../../../../router/app_routes.dart';
 import '../../../announcement/data/models/announcement_model.dart';
 import '../../../announcement/presentation/announcement_visuals.dart';
 import '../../../announcement/presentation/providers/parish_feed_provider.dart';
+import '../../../auth/presentation/providers/session_controller.dart';
+import '../../../donations/data/campaign.dart';
+import '../../../donations/presentation/campaign_providers.dart';
+import '../../../donations/presentation/donations_screen.dart';
 import '../../../life/presentation/screens/life_faith_screen.dart';
 import '../../../movements/data/models/movement.dart';
 import '../../../movements/presentation/providers/movements_provider.dart';
@@ -268,6 +272,39 @@ class _HomeFeed extends ConsumerWidget {
     final feedAsync = ref.watch(parishFeedProvider);
     final home = ref.watch(homeProvider).asData?.value;
     final myMovements = ref.watch(myMovementsProvider).asData?.value ?? const <Movement>[];
+    final user = ref.watch(currentUserProvider);
+    final hidden = user?.hiddenSections ?? const <String>[];
+    final movementsFirst = user?.feedPriority == 'movements';
+    final campaigns = ref.watch(campaignsProvider).asData?.value ?? const <Campaign>[];
+
+    // "Mes activités" (movements) block — placed first when the user prioritises it.
+    final activitiesBlock = <Widget>[
+      const SizedBox(height: 20),
+      Padding(
+        padding: _hpad,
+        child: SectionHeader(
+          title: 'Mes activités',
+          onSeeAll: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MovementsScreen())),
+        ),
+      ),
+      const SizedBox(height: 12),
+      if (myMovements.isEmpty)
+        Padding(
+          padding: _hpad,
+          child: Text('Rejoignez un mouvement dans « Vie & Foi » pour le retrouver ici.',
+              style: const TextStyle(fontSize: 13, color: HomePalette.textBody)),
+        )
+      else
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: _hpad,
+          child: Row(
+            children: [
+              for (final m in myMovements) ...[_MyMovementChip(movement: m), const SizedBox(width: 12)],
+            ],
+          ),
+        ),
+    ];
 
     return RefreshIndicator(
       color: HomePalette.navy,
@@ -282,80 +319,72 @@ class _HomeFeed extends ConsumerWidget {
         padding: const EdgeInsets.only(bottom: 20),
         children: [
           const SizedBox(height: 18),
-          Padding(
-            padding: _hpad,
-            child: LiturgyTodayCard(
-              liturgy: home?.liturgy,
-              nextMass: home?.nextMass,
-              onSeeLiturgy: home?.liturgy == null
-                  ? () => onComingSoon('Liturgie du jour')
-                  : () => Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => LiturgyScreen(liturgy: home!.liturgy!)),
-                      ),
-            ),
-          ),
-          const SizedBox(height: 18),
-          ..._feedSection(ref, feedAsync),
-          const SizedBox(height: 20),
-          Padding(
-            padding: _hpad,
-            child: SectionHeader(title: 'Événements à venir', onSeeAll: () => onComingSoon('Événements')),
-          ),
-          const SizedBox(height: 12),
-          if ((home?.events ?? const []).isEmpty)
+          if (!hidden.contains('liturgy'))
             Padding(
               padding: _hpad,
-              child: Text('Aucun événement à venir pour le moment.',
-                  style: TextStyle(fontSize: 13, color: HomePalette.textBody)),
-            )
-          else
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
+              child: LiturgyTodayCard(
+                liturgy: home?.liturgy,
+                nextMass: home?.nextMass,
+                onSeeLiturgy: home?.liturgy == null
+                    ? () => onComingSoon('Liturgie du jour')
+                    : () => Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => LiturgyScreen(liturgy: home!.liturgy!)),
+                        ),
+              ),
+            ),
+          // "Mes activités" first when the user prioritises their movements.
+          if (movementsFirst && !hidden.contains('activities')) ...activitiesBlock,
+          if (!hidden.contains('feed')) ...[
+            const SizedBox(height: 18),
+            ..._feedSection(ref, feedAsync),
+          ],
+          if (!hidden.contains('events')) ...[
+            const SizedBox(height: 20),
+            Padding(
               padding: _hpad,
-              child: IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    for (final e in home!.events.take(8)) ...[
-                      _eventCardFrom(e),
-                      const SizedBox(width: 12),
+              child: SectionHeader(title: 'Événements à venir', onSeeAll: () => onComingSoon('Événements')),
+            ),
+            const SizedBox(height: 12),
+            if ((home?.events ?? const []).isEmpty)
+              Padding(
+                padding: _hpad,
+                child: Text('Aucun événement à venir pour le moment.',
+                    style: TextStyle(fontSize: 13, color: HomePalette.textBody)),
+              )
+            else
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: _hpad,
+                child: IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (final e in home!.events.take(8)) ...[
+                        _eventCardFrom(e),
+                        const SizedBox(width: 12),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
-            ),
-          const SizedBox(height: 20),
-          Padding(
-            padding: _hpad,
-            child: SectionHeader(
-              title: 'Mes activités',
-              onSeeAll: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MovementsScreen())),
-            ),
-          ),
-          const SizedBox(height: 12),
-          if (myMovements.isEmpty)
+          ],
+          if (!movementsFirst && !hidden.contains('activities')) ...activitiesBlock,
+          if (!hidden.contains('collection') && campaigns.isNotEmpty) ...[
+            const SizedBox(height: 20),
             Padding(
               padding: _hpad,
-              child: Text('Rejoignez un mouvement dans « Vie & Foi » pour le retrouver ici.',
-                  style: const TextStyle(fontSize: 13, color: HomePalette.textBody)),
-            )
-          else
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: _hpad,
-              child: Row(
-                children: [
-                  for (final m in myMovements) ...[_MyMovementChip(movement: m), const SizedBox(width: 12)],
-                ],
+              child: SectionHeader(
+                title: 'Dons & collectes',
+                onSeeAll: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DonationsScreen())),
               ),
             ),
-          const SizedBox(height: 18),
-          Padding(
-            padding: _hpad,
-            child: CollectionCard(onDonate: () => onComingSoon('Faire un don')),
-          ),
-          const SizedBox(height: 18),
-          const Padding(padding: _hpad, child: QuoteCard()),
+            const SizedBox(height: 12),
+            Padding(padding: _hpad, child: CampaignCard(campaign: campaigns.first)),
+          ],
+          if (!hidden.contains('quote')) ...[
+            const SizedBox(height: 18),
+            const Padding(padding: _hpad, child: QuoteCard()),
+          ],
         ],
       ),
     );

@@ -14,6 +14,7 @@ class MovementPost extends Model
         'title',
         'body',
         'image',
+        'video_url',
         'published_at',
     ];
 
