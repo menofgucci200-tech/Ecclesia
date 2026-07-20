@@ -6,10 +6,16 @@ import '../theme/home_palette.dart';
 /// Paiements · Agenda · Profil. Purely presentational — the parent owns the
 /// selected index.
 class HomeBottomNav extends StatelessWidget {
-  const HomeBottomNav({super.key, required this.currentIndex, required this.onTap});
+  const HomeBottomNav({
+    super.key,
+    required this.currentIndex,
+    required this.onTap,
+    this.activeColor = HomePalette.navy,
+  });
 
   final int currentIndex;
   final ValueChanged<int> onTap;
+  final Color activeColor;
 
   static const List<(IconData, String)> _items = [
     (Icons.home_outlined, 'Accueil'),
@@ -46,6 +52,7 @@ class HomeBottomNav extends StatelessWidget {
                     icon: _items[i].$1,
                     label: _items[i].$2,
                     active: i == currentIndex,
+                    activeColor: activeColor,
                     onTap: () => onTap(i),
                   ),
                 ),
@@ -58,16 +65,17 @@ class HomeBottomNav extends StatelessWidget {
 }
 
 class _NavItem extends StatelessWidget {
-  const _NavItem({required this.icon, required this.label, required this.active, required this.onTap});
+  const _NavItem({required this.icon, required this.label, required this.active, required this.activeColor, required this.onTap});
 
   final IconData icon;
   final String label;
   final bool active;
+  final Color activeColor;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final color = active ? HomePalette.navy : HomePalette.textMuted;
+    final color = active ? activeColor : HomePalette.textMuted;
     return InkWell(
       onTap: onTap,
       child: Column(
@@ -80,9 +88,9 @@ class _NavItem extends StatelessWidget {
               alignment: Alignment.center,
               children: [
                 if (active)
-                  const Positioned.fill(
+                  Positioned.fill(
                     child: DecoratedBox(
-                      decoration: BoxDecoration(color: HomePalette.navPill, borderRadius: BorderRadius.all(Radius.circular(100))),
+                      decoration: BoxDecoration(color: activeColor.withValues(alpha: .12), borderRadius: const BorderRadius.all(Radius.circular(100))),
                     ),
                   ),
                 Icon(icon, size: 20, color: color),

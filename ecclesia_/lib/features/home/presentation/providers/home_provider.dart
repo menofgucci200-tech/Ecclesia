@@ -18,3 +18,8 @@ final homeProvider = FutureProvider.autoDispose<HomeData>(
 final agendaProvider = FutureProvider.autoDispose<List<AgendaEvent>>(
   (ref) => ref.read(homeRemoteDataSourceProvider).fetchAgenda(),
 );
+
+/// The liturgy (readings) for a specific date (YYYY-MM-DD).
+final liturgyForDateProvider = FutureProvider.autoDispose.family<LiturgyModel?, String>(
+  (ref, date) => ref.read(homeRemoteDataSourceProvider).fetchLiturgyForDate(date),
+);

@@ -29,4 +29,15 @@ class HomeRemoteDataSource {
       throw ApiException.fromDio(error);
     }
   }
+
+  /// The liturgy (readings) for a given date (YYYY-MM-DD), or null if none.
+  Future<LiturgyModel?> fetchLiturgyForDate(String date) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(ApiConstants.liturgyForDate(date));
+      final liturgy = response.data?['liturgy'] as Map<String, dynamic>?;
+      return liturgy == null ? null : LiturgyModel.fromJson(liturgy);
+    } on DioException catch (error) {
+      throw ApiException.fromDio(error);
+    }
+  }
 }

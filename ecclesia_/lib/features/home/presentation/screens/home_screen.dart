@@ -12,6 +12,7 @@ import '../../data/models/home_data.dart';
 import '../providers/home_provider.dart';
 import '../screens/liturgy_screen.dart';
 import '../theme/home_palette.dart';
+import '../theme/liturgical_colors.dart';
 import '../widgets/agenda_view.dart';
 import '../widgets/home_bottom_nav.dart';
 import '../widgets/home_sections.dart';
@@ -21,14 +22,14 @@ import '../widgets/parish_post_card.dart';
 /// The authenticated home dashboard reproducing the "Ecran8 Accueil" mockup:
 /// liturgy of the day, priority announcement, parish feed, upcoming events,
 /// activities, an ongoing collection and the quote of the day.
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _tab = 0;
 
   void _comingSoon([String? label]) {
@@ -54,6 +55,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final home = ref.watch(homeProvider).asData?.value;
+    final season = LiturgicalColors.season(home?.liturgy?.season, home?.liturgy?.color);
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light.copyWith(statusBarColor: Colors.transparent),
       child: Scaffold(
@@ -62,6 +66,8 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             _HomeAppBar(
               notifCount: 3,
+              barColor: season.primary,
+              seasonName: season.name,
               // Home is the root of the authenticated experience (reached via
               // `context.go`), so there is nothing to pop. The back arrow
               // returns to the "Bienvenue" screen instead.
@@ -72,21 +78,29 @@ class _HomeScreenState extends State<HomeScreen> {
               child: _tab == 0
                   ? _HomeFeed(onComingSoon: _comingSoon)
                   : _tab == 3
-                      ? const AgendaView()
+                      ? AgendaView(seasonColor: season.primary)
                       : _TabPlaceholder(index: _tab),
             ),
           ],
         ),
-        bottomNavigationBar: HomeBottomNav(currentIndex: _tab, onTap: _onTab),
+        bottomNavigationBar: HomeBottomNav(currentIndex: _tab, onTap: _onTab, activeColor: season.primary),
       ),
     );
   }
 }
 
 class _HomeAppBar extends StatelessWidget {
-  const _HomeAppBar({required this.notifCount, required this.onBack, required this.onNotif});
+  const _HomeAppBar({
+    required this.notifCount,
+    required this.onBack,
+    required this.onNotif,
+    this.barColor = HomePalette.gold,
+    this.seasonName = '',
+  });
 
   final int notifCount;
+  final Color barColor;
+  final String seasonName;
   final VoidCallback onBack;
   final VoidCallback onNotif;
 
@@ -94,7 +108,7 @@ class _HomeAppBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final topInset = MediaQuery.of(context).padding.top;
     return Container(
-      color: HomePalette.gold,
+      color: barColor,
       padding: EdgeInsets.only(top: topInset),
       child: SizedBox(
         height: 56,
