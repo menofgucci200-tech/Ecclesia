@@ -16,6 +16,7 @@ import '../../../announcement/presentation/providers/parish_feed_provider.dart';
 import '../../../auth/presentation/providers/session_controller.dart';
 import '../../../donations/data/campaign.dart';
 import '../../../donations/presentation/campaign_providers.dart';
+import '../../../donations/presentation/donations_screen.dart' show CampaignCard;
 import '../../../movements/data/models/movement.dart';
 import '../../../movements/presentation/providers/movements_provider.dart';
 import '../../../payments/presentation/payments_hub_screen.dart';
