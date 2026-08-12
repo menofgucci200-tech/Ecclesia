@@ -134,6 +134,10 @@ Route::prefix('super')->name('super.')->group(function () use ($authRoutes, $sha
         Route::post('liturgies/{liturgy}/resync', [LiturgyController::class, 'resync'])->name('liturgies.resync');
         Route::post('liturgies/sync-upcoming', [LiturgyController::class, 'syncUpcoming'])->name('liturgies.sync-upcoming');
 
+        // Platform-wide settings (Google Maps API key).
+        Route::get('settings/google-maps', [\App\Http\Controllers\Admin\PlatformSettingsController::class, 'edit'])->name('settings.google-maps.edit');
+        Route::put('settings/google-maps', [\App\Http\Controllers\Admin\PlatformSettingsController::class, 'update'])->name('settings.google-maps.update');
+
         // Liturgical calendar (major feasts from LitCal).
         Route::get('calendar', [LiturgicalCalendarController::class, 'index'])->name('calendar.index');
         Route::patch('calendar/{event}/toggle', [LiturgicalCalendarController::class, 'toggle'])->name('calendar.toggle');

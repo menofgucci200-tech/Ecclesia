@@ -1,11 +1,13 @@
+import 'dart:math' as math;
+import 'dart:ui' as ui;
+
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, debugPrint, debugPrintStack;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:latlong2/latlong.dart' as ll;
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/network/api_exception.dart';
@@ -15,10 +17,10 @@ import '../data/nearby_parish_model.dart';
 
 enum _LocationState { loading, serviceDisabled, permissionDenied, ready, error }
 
-/// "Découvrir" — a map of parishes around the faithful's current position.
-/// Partner parishes (blue) vs. non-partner (red); search by name, tap a
-/// marker for an info sheet with distance and directions in the device's
-/// own maps app.
+/// "Découvrir" — a Google Maps view of parishes around the faithful's
+/// current position. Partner parishes (blue) vs. non-partner (red), each
+/// pin labelled with the parish name; search by name; tap a marker for an
+/// info sheet with distance and directions in the device's own maps app.
 class DiscoverScreen extends ConsumerStatefulWidget {
   const DiscoverScreen({super.key});
 
@@ -26,20 +28,23 @@ class DiscoverScreen extends ConsumerStatefulWidget {
   ConsumerState<DiscoverScreen> createState() => _DiscoverScreenState();
 }
 
-class _DiscoverScreenState extends ConsumerState<DiscoverScreen> with SingleTickerProviderStateMixin {
+class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   static const double _defaultRadiusKm = 50;
 
-  final _mapController = MapController();
+  GoogleMapController? _mapController;
   final _searchController = TextEditingController();
   final _searchFocus = FocusNode();
 
-  late final AnimationController _cameraAnim = AnimationController(vsync: this, duration: const Duration(milliseconds: 550));
-  VoidCallback? _cameraListener;
-
   _LocationState _state = _LocationState.loading;
-  ll.LatLng? _position;
+  LatLng? _position;
   final double _radiusKm = _defaultRadiusKm;
   String _query = '';
+
+  // Marker bitmaps are generated once per (name, partner-status) pair and
+  // reused — regenerating a canvas image on every rebuild would be wasteful.
+  final Map<String, BitmapDescriptor> _iconCache = {};
+  List<NearbyParish> _lastParishes = const [];
+  Set<Marker> _markers = {};
 
   @override
   void initState() {
@@ -50,7 +55,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> with SingleTick
 
   @override
   void dispose() {
-    _cameraAnim.dispose();
+    _mapController?.dispose();
     _searchController.dispose();
     _searchFocus.dispose();
     super.dispose();
@@ -89,27 +94,20 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> with SingleTick
       );
       if (!mounted) return;
       setState(() {
-        _position = ll.LatLng(position.latitude, position.longitude);
+        _position = LatLng(position.latitude, position.longitude);
         _state = _LocationState.ready;
       });
-      _mapController.move(_position!, 12);
     } catch (e, st) {
-      // Logged (not surfaced) so a real device failure is diagnosable from
-      // `flutter run` output instead of a generic on-screen message.
       debugPrint('Discover: getCurrentPosition failed — $e');
       debugPrintStack(stackTrace: st);
 
-      // A fresh fix can fail (weak signal, no Play Services) even though the
-      // device already has a recent one cached — better to show a slightly
-      // stale map than an error screen.
       try {
         final last = await Geolocator.getLastKnownPosition();
         if (last != null && mounted) {
           setState(() {
-            _position = ll.LatLng(last.latitude, last.longitude);
+            _position = LatLng(last.latitude, last.longitude);
             _state = _LocationState.ready;
           });
-          _mapController.move(_position!, 12);
           return;
         }
       } catch (_) {
@@ -120,21 +118,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> with SingleTick
     }
   }
 
-  /// Eases the camera to [dest]/[destZoom] instead of an abrupt jump.
-  void _animateCameraTo(ll.LatLng dest, double destZoom) {
-    final camera = _mapController.camera;
-    final latTween = Tween<double>(begin: camera.center.latitude, end: dest.latitude);
-    final lngTween = Tween<double>(begin: camera.center.longitude, end: dest.longitude);
-    final zoomTween = Tween<double>(begin: camera.zoom, end: destZoom);
-    final curved = CurvedAnimation(parent: _cameraAnim, curve: Curves.easeInOutCubic);
-
-    if (_cameraListener != null) _cameraAnim.removeListener(_cameraListener!);
-    _cameraListener = () {
-      _mapController.move(ll.LatLng(latTween.evaluate(curved), lngTween.evaluate(curved)), zoomTween.evaluate(curved));
-    };
-    _cameraAnim
-      ..addListener(_cameraListener!)
-      ..forward(from: 0);
+  Future<void> _animateCameraTo(LatLng dest, double zoom) async {
+    final controller = _mapController;
+    if (controller == null) return;
+    await controller.animateCamera(CameraUpdate.newLatLngZoom(dest, zoom));
   }
 
   Future<void> _openDirections(NearbyParish parish) async {
@@ -164,8 +151,88 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> with SingleTick
     _searchController.clear();
     _searchFocus.unfocus();
     setState(() => _query = '');
-    _animateCameraTo(ll.LatLng(parish.latitude, parish.longitude), 15);
+    _animateCameraTo(LatLng(parish.latitude, parish.longitude), 15);
     _showParishSheet(parish);
+  }
+
+  /// Rebuilds [_markers] for a new parish list, generating any missing
+  /// custom pin+label bitmaps first (cached by name/partner-status).
+  Future<void> _updateMarkers(List<NearbyParish> parishes) async {
+    if (identical(parishes, _lastParishes)) return;
+    _lastParishes = parishes;
+
+    final pixelRatio = MediaQuery.of(context).devicePixelRatio;
+    final markers = <Marker>{};
+
+    for (final p in parishes) {
+      final cacheKey = '${p.name}|${p.isPartner}';
+      final icon = _iconCache[cacheKey] ??= await _buildMarkerBitmap(p.name, p.isPartner, pixelRatio);
+      markers.add(
+        Marker(
+          markerId: MarkerId('parish-${p.id}'),
+          position: LatLng(p.latitude, p.longitude),
+          icon: icon,
+          anchor: const Offset(0.5, 0.42),
+          onTap: () => _showParishSheet(p),
+        ),
+      );
+    }
+
+    if (mounted) setState(() => _markers = markers);
+  }
+
+  /// Draws a colored pin with the parish name in a pill underneath, as a PNG
+  /// — native Google Maps markers only accept bitmaps, not live widgets.
+  Future<BitmapDescriptor> _buildMarkerBitmap(String label, bool isPartner, double pixelRatio) async {
+    final color = isPartner ? const Color(0xFF1A6B9E) : const Color(0xFFCE3B3B);
+    final scale = pixelRatio.clamp(1.0, 3.0);
+
+    final textPainter = TextPainter(
+      text: TextSpan(text: label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: HomePalette.navy)),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+      ellipsis: '…',
+    )..layout(maxWidth: 130);
+
+    const pinRadius = 11.0;
+    const pinBorder = 2.5;
+    const labelPadH = 7.0;
+    const labelPadV = 3.0;
+    const gap = 4.0;
+
+    final labelWidth = textPainter.width + labelPadH * 2;
+    final labelHeight = textPainter.height + labelPadV * 2;
+    final canvasWidth = math.max(labelWidth, pinRadius * 2 + 6);
+    final pinCenter = Offset(canvasWidth / 2, pinRadius + pinBorder + 1);
+    final labelTop = pinCenter.dy + pinRadius + gap;
+    final canvasHeight = labelTop + labelHeight + 1;
+
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, canvasWidth, canvasHeight));
+    canvas.scale(scale);
+
+    canvas.drawCircle(pinCenter, pinRadius, Paint()..color = color);
+    canvas.drawCircle(pinCenter, pinRadius - pinBorder / 2, Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = pinBorder);
+    canvas.drawCircle(pinCenter, pinRadius * 0.34, Paint()..color = Colors.white);
+
+    final labelRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH((canvasWidth - labelWidth) / 2, labelTop, labelWidth, labelHeight),
+      const Radius.circular(100),
+    );
+    canvas.drawRRect(labelRect, Paint()..color = Colors.white);
+    canvas.drawRRect(labelRect, Paint()
+      ..color = color.withValues(alpha: .4)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1);
+    textPainter.paint(canvas, Offset((canvasWidth - labelWidth) / 2 + labelPadH, labelTop + labelPadV));
+
+    final picture = recorder.endRecording();
+    final image = await picture.toImage((canvasWidth * scale).ceil(), (canvasHeight * scale).ceil());
+    final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+    return BitmapDescriptor.bytes(bytes!.buffer.asUint8List(), imagePixelRatio: scale);
   }
 
   @override
@@ -211,38 +278,25 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> with SingleTick
     final position = _position!;
     final async = ref.watch(nearbyParishesProvider((lat: position.latitude, lng: position.longitude, radiusKm: _radiusKm)));
     final parishes = async.asData?.value ?? const <NearbyParish>[];
+
+    if (async.hasValue) {
+      // Fire-and-forget: rebuilds `_markers` asynchronously as bitmaps are ready.
+      _updateMarkers(parishes);
+    }
+
     final results = _query.isEmpty
         ? const <NearbyParish>[]
         : parishes.where((p) => '${p.name} ${p.locationLine}'.toLowerCase().contains(_query.toLowerCase())).take(6).toList();
 
     return Stack(
       children: [
-        FlutterMap(
-          mapController: _mapController,
-          options: MapOptions(initialCenter: position, initialZoom: 12, maxZoom: 18, minZoom: 3),
-          children: [
-            TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.example.ecclesia_',
-            ),
-            MarkerLayer(
-              markers: [
-                Marker(point: position, width: 22, height: 22, child: const _UserDot()),
-                ...parishes.map(
-                  (p) => Marker(
-                    point: ll.LatLng(p.latitude, p.longitude),
-                    width: 120,
-                    height: 64,
-                    alignment: Alignment.topCenter,
-                    child: GestureDetector(
-                      onTap: () => _showParishSheet(p),
-                      child: _ParishPin(parish: p),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
+        GoogleMap(
+          initialCameraPosition: CameraPosition(target: position, zoom: 12),
+          onMapCreated: (controller) => _mapController = controller,
+          myLocationEnabled: true,
+          myLocationButtonEnabled: false,
+          zoomControlsEnabled: false,
+          markers: _markers,
         ),
         Positioned(
           top: 10,
@@ -402,56 +456,6 @@ class _SearchResults extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-class _UserDot extends StatelessWidget {
-  const _UserDot();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: HomePalette.navy,
-        border: Border.all(color: Colors.white, width: 3),
-        boxShadow: [BoxShadow(color: HomePalette.navy.withValues(alpha: .4), blurRadius: 8, spreadRadius: 1)],
-      ),
-    );
-  }
-}
-
-class _ParishPin extends StatelessWidget {
-  const _ParishPin({required this.parish});
-
-  final NearbyParish parish;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = parish.isPartner ? const Color(0xFF1A6B9E) : const Color(0xFFCE3B3B);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(Icons.location_on, size: 36, color: color, shadows: const [Shadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))]),
-        Container(
-          constraints: const BoxConstraints(maxWidth: 108),
-          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(100),
-            border: Border.all(color: color.withValues(alpha: .35)),
-            boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 3, offset: Offset(0, 1))],
-          ),
-          child: Text(
-            parish.name,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: HomePalette.navy),
-          ),
-        ),
-      ],
-    ).animate().fadeIn(duration: 220.ms).scale(begin: const Offset(.7, .7), end: const Offset(1, 1), duration: 220.ms, curve: Curves.easeOutBack);
   }
 }
 

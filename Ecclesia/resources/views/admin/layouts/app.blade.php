@@ -54,6 +54,9 @@
                     <a href="{{ admin_route('saints.index') }}" @class(['nav-link', 'nav-link-active' => admin_route_is('saints.*')])>
                         <x-icon name="sparkles" class="h-5 w-5" /> Saints du jour
                     </a>
+                    <a href="{{ admin_route('settings.google-maps.edit') }}" @class(['nav-link', 'nav-link-active' => admin_route_is('settings.google-maps.*')])>
+                        <x-icon name="location" class="h-5 w-5" /> Google Maps
+                    </a>
                 @endif
                 <a href="{{ admin_route('members.index') }}" @class(['nav-link', 'nav-link-active' => admin_route_is('members.*')])>
                     <x-icon name="users" class="h-5 w-5" /> Fidèles
@@ -138,5 +141,6 @@
         </main>
     </div>
 </div>
+@stack('scripts')
 </body>
 </html>

@@ -78,7 +78,11 @@ class ParishController extends Controller implements HasMiddleware
             : null;
 
         $parish = Parish::create($data);
-        $this->geocodeIfNeeded($parish);
+        // A place picked from the Google autocomplete already carries exact
+        // coordinates — no need to re-geocode from the (looser) address text.
+        if (! $parish->hasLocation()) {
+            $this->geocodeIfNeeded($parish);
+        }
 
         // The parish's administrator account (signs in at /admin with this login).
         User::create([
@@ -125,7 +129,12 @@ class ParishController extends Controller implements HasMiddleware
         }
 
         $parish->update($data);
-        $this->geocodeIfNeeded($parish, wasAddressChanged: $parish->wasChanged(['address', 'city', 'commune', 'region', 'country']));
+
+        // A place picked from the Google autocomplete already carries exact
+        // coordinates — no need to re-geocode from the (looser) address text.
+        if (! $parish->wasChanged(['latitude', 'longitude'])) {
+            $this->geocodeIfNeeded($parish, wasAddressChanged: $parish->wasChanged(['address', 'city', 'commune', 'region', 'country']));
+        }
 
         // Create or update the linked administrator account.
         $admin = $parish->admin;

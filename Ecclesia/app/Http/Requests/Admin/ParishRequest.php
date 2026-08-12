@@ -46,6 +46,10 @@ class ParishRequest extends FormRequest
             'commune' => ['nullable', 'string', 'max:255'],
             'region' => ['nullable', 'string', 'max:255'],
             'country' => ['nullable', 'string', 'max:255'],
+            // Set by the Google Places widget when a suggestion is picked;
+            // absent when the admin types the address fields by hand.
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'phone' => ['nullable', 'string', 'max:30'],
             'email' => ['nullable', 'email', 'max:255'],
             'status' => ['required', Rule::in(ParishStatus::values())],

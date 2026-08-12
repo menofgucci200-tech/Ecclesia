@@ -1,1 +1,6 @@
+#include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"
 #include "Generated.xcconfig"
+
+// Google Maps SDK key ("Découvrir") — set via the MAPS_API_KEY env var at
+// build time. Empty by default; never commit a real key.
+GOOGLE_MAPS_API_KEY = $(MAPS_API_KEY)

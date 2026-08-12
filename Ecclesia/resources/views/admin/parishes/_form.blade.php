@@ -2,6 +2,9 @@
     /** @var \App\Models\Parish $parish */
     $isEdit = $parish->exists;
     $adminLogin = old('login', $parish->admin?->username);
+    $googleMapsApiKey = \App\Models\PlatformSetting::get(\App\Models\PlatformSetting::GOOGLE_MAPS_API_KEY);
+    $lat = old('latitude', $parish->latitude);
+    $lng = old('longitude', $parish->longitude);
 @endphp
 
 <form method="POST" enctype="multipart/form-data"
@@ -81,6 +84,31 @@
             <h3 class="text-base font-bold">Localisation & diocèse</h3>
             <span class="badge-muted">Optionnel</span>
         </div>
+
+        @if($googleMapsApiKey)
+            <div class="mb-5">
+                <label class="field-label" for="place-search">Rechercher un lieu (Google Maps)</label>
+                <input id="place-search" type="text" class="input" autocomplete="off"
+                       placeholder="Ex. Cathédrale Saint-Paul, Le Plateau, Abidjan">
+                <p class="field-hint" id="place-status">
+                    @if($lat && $lng)
+                        <span class="text-[color:var(--color-success,#16a34a)]">✓ Localisation confirmée ({{ number_format((float) $lat, 5) }}, {{ number_format((float) $lng, 5) }})</span>
+                    @else
+                        Tapez le nom du lieu, sélectionnez la suggestion qui correspond — les champs ci-dessous se remplissent automatiquement.
+                        Si aucune suggestion ne correspond, renseignez simplement les champs manuellement.
+                    @endif
+                </p>
+            </div>
+        @else
+            <p class="mb-5 rounded-xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-surface-muted)] px-3.5 py-3 text-sm text-[color:var(--color-ink-soft)]">
+                Recherche de lieu automatique désactivée — configurez une <a href="{{ admin_route('settings.google-maps.edit') }}" class="font-semibold underline">clé Google Maps</a> pour l'activer.
+                En attendant, l'adresse saisie ci-dessous sera géolocalisée automatiquement (via OpenStreetMap) à l'enregistrement.
+            </p>
+        @endif
+
+        <input type="hidden" id="latitude" name="latitude" value="{{ $lat }}">
+        <input type="hidden" id="longitude" name="longitude" value="{{ $lng }}">
+
         <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <div class="sm:col-span-2">
                 <label class="field-label" for="diocese">Diocèse</label>
@@ -197,3 +225,50 @@
         </button>
     </div>
 </form>
+
+@if($googleMapsApiKey)
+    @push('scripts')
+        <script>
+            function initParishPlaceAutocomplete() {
+                const input = document.getElementById('place-search');
+                if (!input || !window.google) return;
+
+                const autocomplete = new google.maps.places.Autocomplete(input, {
+                    fields: ['address_components', 'geometry', 'name', 'formatted_address'],
+                });
+
+                autocomplete.addListener('place_changed', function () {
+                    const place = autocomplete.getPlace();
+                    if (!place.geometry || !place.geometry.location) return;
+
+                    const lat = place.geometry.location.lat();
+                    const lng = place.geometry.location.lng();
+                    document.getElementById('latitude').value = lat;
+                    document.getElementById('longitude').value = lng;
+
+                    const components = {};
+                    (place.address_components || []).forEach(function (c) {
+                        c.types.forEach(function (type) { components[type] = c.long_name; });
+                    });
+
+                    const set = function (id, value) {
+                        const el = document.getElementById(id);
+                        if (el && value) el.value = value;
+                    };
+
+                    set('address', place.formatted_address || place.name);
+                    set('commune', components.sublocality || components.sublocality_level_1 || components.administrative_area_level_3);
+                    set('city', components.locality || components.administrative_area_level_2);
+                    set('region', components.administrative_area_level_1);
+                    set('country', components.country);
+
+                    const status = document.getElementById('place-status');
+                    if (status) {
+                        status.innerHTML = '<span style="color:#16a34a">✓ Localisation confirmée (' + lat.toFixed(5) + ', ' + lng.toFixed(5) + ')</span>';
+                    }
+                });
+            }
+        </script>
+        <script src="https://maps.googleapis.com/maps/api/js?key={{ $googleMapsApiKey }}&libraries=places&callback=initParishPlaceAutocomplete&loading=async" async defer></script>
+    @endpush
+@endif
