@@ -140,6 +140,12 @@
                 @error('status') <p class="field-error">{{ $message }}</p> @enderror
             </div>
         </div>
+        <label class="mt-5 flex items-center gap-3 rounded-xl border border-[color:var(--color-border-soft)] px-3.5 py-3 text-sm">
+            <input type="hidden" name="is_partner" value="0">
+            <input type="checkbox" name="is_partner" value="1" @checked(old('is_partner', $parish->is_partner)) class="h-4 w-4 rounded border-[color:var(--color-border-strong)] text-[color:var(--color-navy)]">
+            <span><span class="font-medium">Paroisse partenaire</span> — repère bleu sur la carte « Découvrir » de l'app (au lieu de rouge)</span>
+        </label>
+        @error('is_partner') <p class="field-error">{{ $message }}</p> @enderror
     </div>
 
     {{-- ============ Paiements CinetPay (optionnel) ============ --}}

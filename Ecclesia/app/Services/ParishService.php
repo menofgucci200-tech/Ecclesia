@@ -40,4 +40,14 @@ class ParishService
 
         return $parish;
     }
+
+    /**
+     * Active, geocoded parishes within [radiusKm] of a point, nearest first.
+     *
+     * @return \Illuminate\Support\Collection<int, Parish>
+     */
+    public function nearby(float $lat, float $lng, float $radiusKm): \Illuminate\Support\Collection
+    {
+        return $this->parishes->nearby($lat, $lng, $radiusKm);
+    }
 }

@@ -7,6 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../router/app_routes.dart';
 import '../../../auth/presentation/providers/session_controller.dart';
 import '../../../bible/presentation/bible_home_screen.dart';
+import '../../../discover/presentation/discover_screen.dart';
 import '../../../intentions/presentation/intentions_screen.dart';
 import '../../../prayers/presentation/prayers_screen.dart';
 import '../../../profile/presentation/screens/preferences_screen.dart';
@@ -64,6 +65,11 @@ class HomeEndDrawer extends ConsumerWidget {
       case _DrawerAction.soon:
         _soon(context, item.label);
     }
+  }
+
+  void _openDiscover(BuildContext context) {
+    Navigator.of(context).pop();
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DiscoverScreen()));
   }
 
   void _openProfile(BuildContext context) {
@@ -165,6 +171,9 @@ class HomeEndDrawer extends ConsumerWidget {
               child: ListView(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 children: [
+                  const _SectionLabel('EXPLORER'),
+                  _DrawerTile(icon: Icons.explore_outlined, label: 'Découvrir', onTap: () => _openDiscover(context)),
+                  const Divider(height: 24, color: HomePalette.cardBorder),
                   const _SectionLabel('VIE & FOI'),
                   for (final item in _lifeItems)
                     _DrawerTile(

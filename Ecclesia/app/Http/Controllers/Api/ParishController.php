@@ -6,7 +6,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Parish\IndexParishRequest;
+use App\Http\Requests\Parish\NearbyParishRequest;
 use App\Http\Requests\Parish\SearchParishRequest;
+use App\Http\Resources\NearbyParishResource;
 use App\Http\Resources\ParishResource;
 use App\Services\ParishService;
 use Illuminate\Http\JsonResponse;
@@ -45,6 +47,19 @@ class ParishController extends Controller
     {
         return response()->json([
             'data' => ParishResource::make($this->parishes->findActiveOrFail($parish)),
+        ]);
+    }
+
+    /**
+     * Parishes near a point ("Découvrir" map) — partner and non-partner
+     * alike, distance-sorted.
+     */
+    public function nearby(NearbyParishRequest $request): JsonResponse
+    {
+        return response()->json([
+            'data' => NearbyParishResource::collection(
+                $this->parishes->nearby($request->lat(), $request->lng(), $request->radiusKm()),
+            ),
         ]);
     }
 }

@@ -20,4 +20,12 @@ interface ParishRepositoryInterface
      * @return LengthAwarePaginator<int, Parish>
      */
     public function paginateActive(?string $search, int $perPage): LengthAwarePaginator;
+
+    /**
+     * Active, geocoded parishes within [radiusKm] of a point, nearest first,
+     * each carrying a `distance_km` attribute.
+     *
+     * @return \Illuminate\Support\Collection<int, Parish>
+     */
+    public function nearby(float $lat, float $lng, float $radiusKm): \Illuminate\Support\Collection;
 }

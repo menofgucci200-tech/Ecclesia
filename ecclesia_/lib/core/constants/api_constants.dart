@@ -38,6 +38,7 @@ class ApiConstants {
   // Parishes
   static const String parishes = '/parishes';
   static const String parishesSearch = '/parishes/search';
+  static const String parishesNearby = '/parishes/nearby';
   static String parish(int id) => '/parishes/$id';
 
   // The authenticated faithful's parish membership.

@@ -32,10 +32,13 @@ class Parish extends Model
         'commune',
         'region',
         'country',
+        'latitude',
+        'longitude',
         'phone',
         'email',
         'logo',
         'status',
+        'is_partner',
         'subscription_amount',
         'cinetpay_site_id',
         'cinetpay_api_key',
@@ -66,7 +69,15 @@ class Parish extends Model
             'cinetpay_api_key' => 'encrypted',
             'cinetpay_secret_key' => 'encrypted',
             'mass_offering_amount' => 'integer',
+            'latitude' => 'decimal:7',
+            'longitude' => 'decimal:7',
+            'is_partner' => 'boolean',
         ];
+    }
+
+    public function hasLocation(): bool
+    {
+        return $this->latitude !== null && $this->longitude !== null;
     }
 
     /** Whether this parish can receive online payments (CinetPay configured). */

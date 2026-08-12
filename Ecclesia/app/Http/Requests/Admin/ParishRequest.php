@@ -49,6 +49,7 @@ class ParishRequest extends FormRequest
             'phone' => ['nullable', 'string', 'max:30'],
             'email' => ['nullable', 'email', 'max:255'],
             'status' => ['required', Rule::in(ParishStatus::values())],
+            'is_partner' => ['nullable', 'boolean'],
 
             // --- Paiements CinetPay (par paroisse) -------------------------
             'cinetpay_site_id' => ['nullable', 'string', 'max:255'],

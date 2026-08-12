@@ -12,6 +12,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ParishRequest;
 use App\Models\Parish;
 use App\Models\User;
+use App\Services\GeocodingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -22,6 +23,10 @@ use Illuminate\View\View;
 
 class ParishController extends Controller implements HasMiddleware
 {
+    public function __construct(private readonly GeocodingService $geocoding)
+    {
+    }
+
     /**
      * Only super admins manage the parish directory.
      */
@@ -73,6 +78,7 @@ class ParishController extends Controller implements HasMiddleware
             : null;
 
         $parish = Parish::create($data);
+        $this->geocodeIfNeeded($parish);
 
         // The parish's administrator account (signs in at /admin with this login).
         User::create([
@@ -119,6 +125,7 @@ class ParishController extends Controller implements HasMiddleware
         }
 
         $parish->update($data);
+        $this->geocodeIfNeeded($parish, wasAddressChanged: $parish->wasChanged(['address', 'city', 'commune', 'region', 'country']));
 
         // Create or update the linked administrator account.
         $admin = $parish->admin;
@@ -180,6 +187,23 @@ class ParishController extends Controller implements HasMiddleware
         return redirect()
             ->route('super.parishes.index')
             ->with('success', "La paroisse « {$name} » a été supprimée.");
+    }
+
+    /**
+     * Best-effort geocode for the "Découvrir" map — silently does nothing if
+     * the address can't be resolved (e.g. offline, address too vague); the
+     * parish just won't appear on the map until a later save succeeds.
+     */
+    private function geocodeIfNeeded(Parish $parish, bool $wasAddressChanged = true): void
+    {
+        if (! $wasAddressChanged && $parish->hasLocation()) {
+            return;
+        }
+
+        $result = $this->geocoding->geocode($parish);
+        if ($result !== null) {
+            $parish->update(['latitude' => $result['lat'], 'longitude' => $result['lng']]);
+        }
     }
 
     /**

@@ -46,6 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Parish discovery (order matters: static segments before the wildcard).
     Route::get('parishes', [ParishController::class, 'index']);
     Route::get('parishes/search', [ParishController::class, 'search']);
+    Route::get('parishes/nearby', [ParishController::class, 'nearby']);
     Route::get('parishes/{parish}', [ParishController::class, 'show'])->whereNumber('parish');
 
     // The authenticated faithful's parish membership.
