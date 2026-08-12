@@ -113,6 +113,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     onComingSoon: _comingSoon,
                     onSeeMovements: () => setState(() => _tab = 1),
                     onSeePaiements: () => setState(() => _tab = 2),
+                    onSeeAgenda: () => setState(() => _tab = 3),
                   ),
                 1 => const MovementsScreen(),
                 2 => const PaymentsHubScreen(),
@@ -297,11 +298,12 @@ Widget _eventCardFrom(AgendaEvent e, {VoidCallback? onTap}) {
 }
 
 class _HomeFeed extends ConsumerWidget {
-  const _HomeFeed({required this.onComingSoon, required this.onSeeMovements, required this.onSeePaiements});
+  const _HomeFeed({required this.onComingSoon, required this.onSeeMovements, required this.onSeePaiements, required this.onSeeAgenda});
 
   final void Function([String?]) onComingSoon;
   final VoidCallback onSeeMovements;
   final VoidCallback onSeePaiements;
+  final VoidCallback onSeeAgenda;
 
   static const EdgeInsets _hpad = EdgeInsets.symmetric(horizontal: 18);
 
@@ -402,7 +404,7 @@ class _HomeFeed extends ConsumerWidget {
             const SizedBox(height: 20),
             Padding(
               padding: _hpad,
-              child: SectionHeader(title: 'Événements à venir', onSeeAll: () => onComingSoon('Événements')),
+              child: SectionHeader(title: 'Événements à venir', onSeeAll: onSeeAgenda),
             ),
             const SizedBox(height: 12),
             if (homeAsync.isLoading)
@@ -434,7 +436,7 @@ class _HomeFeed extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       for (final (i, e) in home!.events.take(8).indexed) ...[
-                        _eventCardFrom(e, onTap: () => onComingSoon(e.title))
+                        _eventCardFrom(e, onTap: onSeeAgenda)
                             .animate()
                             .fadeIn(duration: 300.ms, delay: (i * 60).ms)
                             .slideX(begin: .08, end: 0, duration: 300.ms, delay: (i * 60).ms, curve: Curves.easeOutCubic),

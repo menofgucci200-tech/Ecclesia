@@ -1,66 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_exception.dart';
-import '../../../core/widgets/empty_state.dart';
-import '../../../core/widgets/error_state.dart';
 import '../../../core/widgets/fade_network_image.dart';
-import '../../../core/widgets/skeleton.dart';
 import '../../home/presentation/theme/home_palette.dart';
 import '../data/campaign.dart';
 import 'campaign_providers.dart';
-
-/// The "Paiements" tab content: header + the parish's donation campaigns.
-/// Embedded under the home dashboard's own app bar — no `Scaffold`/`AppBar`
-/// of its own. The header stays put across loading/error/data so it never
-/// pops in.
-class DonationsScreen extends ConsumerWidget {
-  const DonationsScreen({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final async = ref.watch(campaignsProvider);
-    return Container(
-      color: HomePalette.screenBg,
-      child: RefreshIndicator(
-        color: HomePalette.navy,
-        onRefresh: () async => ref.invalidate(campaignsProvider),
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 18, 16, 30),
-          physics: const AlwaysScrollableScrollPhysics(),
-          children: [
-            const Text('Paiements', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: HomePalette.navy)),
-            const SizedBox(height: 4),
-            const Text('Soutenez les projets et collectes de votre paroisse.', style: TextStyle(fontSize: 14, color: HomePalette.textBody)),
-            const SizedBox(height: 18),
-            async.when(
-              loading: () => const SkeletonFeedCard(),
-              error: (e, _) => ErrorState(
-                message: e is ApiException ? e.message : 'Impossible de charger les collectes.',
-                onRetry: () => ref.invalidate(campaignsProvider),
-              ),
-              data: (campaigns) => campaigns.isEmpty
-                  ? const EmptyState(message: 'Aucune collecte en cours pour le moment.', icon: Icons.volunteer_activism_outlined)
-                  : Column(
-                      children: [
-                        for (var i = 0; i < campaigns.length; i++) ...[
-                          CampaignCard(campaign: campaigns[i])
-                              .animate()
-                              .fadeIn(duration: 320.ms, delay: (i * 60).ms)
-                              .slideY(begin: .06, end: 0, duration: 320.ms, delay: (i * 60).ms, curve: Curves.easeOutCubic),
-                          const SizedBox(height: 14),
-                        ],
-                      ],
-                    ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 /// A campaign card with progress bar and a "Donner" action (pledge).
 class CampaignCard extends ConsumerWidget {
