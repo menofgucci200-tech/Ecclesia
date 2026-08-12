@@ -61,6 +61,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'parish_joined_at' => 'datetime',
+            'notifications_last_seen_at' => 'datetime',
             'password' => 'hashed',
             'gender' => Gender::class,
             'status' => UserStatus::class,

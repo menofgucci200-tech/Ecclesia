@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../../../../core/constants/api_constants.dart';
+import '../../../../core/network/api_exception.dart';
 import '../../../../core/network/cached_fetch.dart';
 import '../../../../core/storage/cache_service.dart';
 import '../models/home_data.dart';
@@ -32,6 +33,20 @@ class HomeRemoteDataSource {
     );
     final data = json['events'] as List<dynamic>? ?? const [];
     return data.map((e) => AgendaEvent.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  /// Toggles the faithful's RSVP for a parish event. Returns the new
+  /// attending state and attendee count.
+  Future<({bool isAttending, int attendeesCount})> toggleEventRsvp(int eventId) async {
+    try {
+      final res = await _dio.post<Map<String, dynamic>>(ApiConstants.agendaEventRsvp(eventId));
+      return (
+        isAttending: res.data?['is_attending'] as bool? ?? false,
+        attendeesCount: (res.data?['attendees_count'] as num?)?.toInt() ?? 0,
+      );
+    } on DioException catch (e) {
+      throw ApiException.fromDio(e);
+    }
   }
 
   /// The liturgy (readings) for a given date (YYYY-MM-DD), or null if none.

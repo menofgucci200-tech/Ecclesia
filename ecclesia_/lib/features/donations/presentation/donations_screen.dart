@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_state.dart';
+import '../../../core/widgets/fade_network_image.dart';
 import '../../../core/widgets/skeleton.dart';
 import '../../home/presentation/theme/home_palette.dart';
 import '../data/campaign.dart';
@@ -145,7 +146,11 @@ class CampaignCard extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (campaign.imageUrl != null)
-            Image.network(campaign.imageUrl!, height: 140, width: double.infinity, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+            SizedBox(
+              height: 140,
+              width: double.infinity,
+              child: FadeNetworkImage(url: campaign.imageUrl),
+            ),
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(

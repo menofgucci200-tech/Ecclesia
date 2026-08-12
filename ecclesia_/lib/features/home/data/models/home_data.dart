@@ -46,21 +46,29 @@ class HomeData {
   }
 }
 
-/// A single agenda item: a major liturgical feast or a parish event.
+/// A single agenda item: a major liturgical feast, a parish event, or one of
+/// the faithful's own scheduled mass intentions.
 class AgendaEvent {
   const AgendaEvent({
     required this.type,
     required this.date,
     required this.title,
+    this.id,
     this.time,
     this.subtitle,
     this.color,
     this.grade = 0,
     this.location,
     this.description,
+    this.confirmed,
+    this.attendeesCount,
+    this.isAttending,
   });
 
-  final String type; // 'liturgical' | 'parish'
+  final String type; // 'liturgical' | 'parish' | 'mass_intention'
+
+  /// The `ParishEvent` id — only set for `type == 'parish'`, needed for RSVP.
+  final int? id;
   final DateTime date;
   final String title;
   final String? time;
@@ -70,10 +78,19 @@ class AgendaEvent {
   final String? location;
   final String? description;
 
+  /// For `type == 'mass_intention'`: whether the payment behind it is paid.
+  final bool? confirmed;
+
+  /// For `type == 'parish'`: RSVP count and whether the current user is in.
+  final int? attendeesCount;
+  final bool? isAttending;
+
   bool get isParish => type == 'parish';
+  bool get isMassIntention => type == 'mass_intention';
 
   factory AgendaEvent.fromJson(Map<String, dynamic> json) => AgendaEvent(
         type: json['type'] as String? ?? 'liturgical',
+        id: (json['id'] as num?)?.toInt(),
         date: DateTime.tryParse(json['date'] as String? ?? '') ?? DateTime.now(),
         title: json['title'] as String? ?? '',
         time: json['time'] as String?,
@@ -82,6 +99,25 @@ class AgendaEvent {
         grade: (json['grade'] as num?)?.toInt() ?? 0,
         location: json['location'] as String?,
         description: json['description'] as String?,
+        confirmed: json['confirmed'] as bool?,
+        attendeesCount: (json['attendees_count'] as num?)?.toInt(),
+        isAttending: json['is_attending'] as bool?,
+      );
+
+  AgendaEvent copyWith({int? attendeesCount, bool? isAttending}) => AgendaEvent(
+        type: type,
+        id: id,
+        date: date,
+        title: title,
+        time: time,
+        subtitle: subtitle,
+        color: color,
+        grade: grade,
+        location: location,
+        description: description,
+        confirmed: confirmed,
+        attendeesCount: attendeesCount ?? this.attendeesCount,
+        isAttending: isAttending ?? this.isAttending,
       );
 }
 

@@ -46,10 +46,16 @@ class ApiConstants {
   // Parish content — the "Fil paroissial" feed.
   static const String parishAnnouncements = '/parish/announcements';
 
+  // Notification center (bell icon).
+  static const String notifications = '/notifications';
+  static const String notificationsUnreadCount = '/notifications/unread-count';
+  static const String notificationsMarkRead = '/notifications/read';
+
   // Home aggregate (liturgy of the day + parish schedule + headline) & liturgy.
   static const String home = '/home';
   static const String liturgy = '/liturgy';
   static const String agenda = '/agenda';
+  static String agendaEventRsvp(int eventId) => '/agenda/events/$eventId/rsvp';
   static String liturgyForDate(String date) => '/liturgy/$date';
 
   // Movements (Vie & Foi).

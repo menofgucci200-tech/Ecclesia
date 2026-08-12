@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/widgets/fade_network_image.dart';
 import '../theme/home_palette.dart';
 
 /// A single post in the "Fil paroissial" feed: a coloured header image
@@ -19,6 +20,7 @@ class ParishPostCard extends StatefulWidget {
     required this.authorColor,
     required this.authorName,
     required this.date,
+    this.imageUrl,
     this.showActions = true,
     this.initialLikeCount = 24,
     this.commentCount = 8,
@@ -36,6 +38,7 @@ class ParishPostCard extends StatefulWidget {
   final Color authorColor;
   final String authorName;
   final String date;
+  final String? imageUrl;
   final bool showActions;
   final int initialLikeCount;
   final int commentCount;
@@ -92,6 +95,24 @@ class _ParishPostCardState extends State<ParishPostCard> {
                     color: Colors.white.withValues(alpha:.22),
                   ),
                 ),
+                if (widget.imageUrl != null && widget.imageUrl!.isNotEmpty) ...[
+                  Positioned.fill(
+                    child: FadeNetworkImage(url: widget.imageUrl, fit: BoxFit.cover),
+                  ),
+                  // Keeps the category badge legible over a bright photo.
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Colors.black.withValues(alpha: .28), Colors.transparent, Colors.black.withValues(alpha: .12)],
+                          stops: const [0, .4, 1],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
                 Positioned(
                   top: 12,
                   left: 14,

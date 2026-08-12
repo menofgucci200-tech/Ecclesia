@@ -12,9 +12,11 @@ class LiturgicalColors {
   static const Color purple = Color(0xFF7A4FB0); // Avent, Carême
   static const Color rose = Color(0xFFDB7FA0); // Gaudete / Laetare
   static const Color parish = Color(0xFF1A6B9E); // événements de la paroisse (bleu)
+  static const Color massIntention = Color(0xFFB8901E); // mes intentions de messe (or foncé)
 
   /// Dot colour for an agenda item.
-  static Color dot({required bool isParish, String? liturgicalColor}) {
+  static Color dot({required bool isParish, String? liturgicalColor, bool isMassIntention = false}) {
+    if (isMassIntention) return massIntention;
     if (isParish) return parish;
     return switch (_normalize(liturgicalColor)) {
       'rouge' => red,
@@ -32,6 +34,7 @@ class LiturgicalColors {
     (purple, 'Avent · Carême'),
     (green, 'Temps ordinaire'),
     (parish, 'Événements paroisse'),
+    (massIntention, 'Mes intentions de messe'),
   ];
 
   // ---- Season theming (top bar + icons + accents) ---------------------

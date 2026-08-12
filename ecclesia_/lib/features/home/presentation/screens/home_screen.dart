@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/error_state.dart';
+import '../../../../core/widgets/fade_network_image.dart';
 import '../../../../core/widgets/offline_banner.dart';
 import '../../../../core/widgets/skeleton.dart';
 import '../../../../router/app_routes.dart';
@@ -22,6 +23,8 @@ import '../../../movements/presentation/providers/movements_provider.dart';
 import '../../../payments/presentation/payments_hub_screen.dart';
 import '../../../movements/presentation/screens/movement_detail_screen.dart';
 import '../../../movements/presentation/screens/movements_screen.dart';
+import '../../../notifications/data/notification_providers.dart';
+import '../../../notifications/presentation/notifications_screen.dart';
 import '../../data/models/home_data.dart';
 import '../providers/home_provider.dart';
 import '../screens/liturgy_screen.dart';
@@ -72,10 +75,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     setState(() => _tab = index);
   }
 
+  Future<void> _openNotifications(BuildContext context) async {
+    HapticFeedback.selectionClick();
+    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+    // The screen marks everything read on open; refresh the badge on return.
+    if (mounted) ref.invalidate(unreadNotificationsCountProvider);
+  }
+
   @override
   Widget build(BuildContext context) {
     final home = ref.watch(homeProvider).asData?.value;
     final season = LiturgicalColors.season(home?.liturgy?.season, home?.liturgy?.color);
+    final unreadCount = ref.watch(unreadNotificationsCountProvider).asData?.value ?? 0;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light.copyWith(statusBarColor: Colors.transparent),
@@ -86,14 +97,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         body: Column(
           children: [
             _HomeAppBar(
-              notifCount: 3,
+              notifCount: unreadCount,
               barColor: season.primary,
               seasonName: season.name,
               // Home is the root of the authenticated experience (reached via
               // `context.go`), so there is nothing to pop. The back arrow
               // returns to the "Bienvenue" screen instead.
               onBack: () => context.go(AppRoutes.welcomeUser),
-              onNotif: () => _comingSoon('Notifications'),
+              onNotif: () => _openNotifications(context),
             ),
             const OfflineBanner(),
             Expanded(
@@ -237,9 +248,10 @@ class _MyMovementChip extends StatelessWidget {
             Container(
               width: 40, height: 40, clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(color: HomePalette.navy.withValues(alpha: .08), borderRadius: BorderRadius.circular(11)),
-              child: movement.logoUrl != null
-                  ? Image.network(movement.logoUrl!, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.groups_outlined, size: 20, color: HomePalette.navy))
-                  : const Icon(Icons.groups_outlined, size: 20, color: HomePalette.navy),
+              child: FadeNetworkImage(
+                url: movement.logoUrl,
+                fallback: const Icon(Icons.groups_outlined, size: 20, color: HomePalette.navy),
+              ),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -259,7 +271,7 @@ class _MyMovementChip extends StatelessWidget {
 }
 
 /// Builds a compact "upcoming event" card from a real agenda item.
-Widget _eventCardFrom(AgendaEvent e) {
+Widget _eventCardFrom(AgendaEvent e, {VoidCallback? onTap}) {
   const monthsAbbr = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
   final now = DateTime.now();
   final days = DateTime(e.date.year, e.date.month, e.date.day)
@@ -280,6 +292,7 @@ Widget _eventCardFrom(AgendaEvent e) {
     place: e.location ?? e.subtitle ?? (isParish ? 'Paroisse' : 'Fête liturgique'),
     badgeText: badge,
     badgeBg: isParish ? const Color(0xFFEEF5FB) : const Color(0xFFFBF3DD),
+    onTap: onTap,
   );
 }
 
@@ -339,7 +352,13 @@ class _HomeFeed extends ConsumerWidget {
           padding: _hpad,
           child: Row(
             children: [
-              for (final m in myMovements) ...[_MyMovementChip(movement: m), const SizedBox(width: 12)],
+              for (final (i, m) in myMovements.indexed) ...[
+                _MyMovementChip(movement: m)
+                    .animate()
+                    .fadeIn(duration: 280.ms, delay: (i * 50).ms)
+                    .slideX(begin: .08, end: 0, duration: 280.ms, delay: (i * 50).ms, curve: Curves.easeOutCubic),
+                const SizedBox(width: 12),
+              ],
             ],
           ),
         ),
@@ -371,7 +390,7 @@ class _HomeFeed extends ConsumerWidget {
                           : () => Navigator.of(context).push(
                                 MaterialPageRoute(builder: (_) => LiturgyScreen(liturgy: home!.liturgy!)),
                               ),
-                    ),
+                    ).animate().fadeIn(duration: 340.ms).slideY(begin: .05, end: 0, duration: 340.ms, curve: Curves.easeOutCubic),
             ),
           // "Mes activités" first when the user prioritises their movements.
           if (movementsFirst && !hidden.contains('activities')) ...activitiesBlock,
@@ -414,8 +433,11 @@ class _HomeFeed extends ConsumerWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      for (final e in home!.events.take(8)) ...[
-                        _eventCardFrom(e),
+                      for (final (i, e) in home!.events.take(8).indexed) ...[
+                        _eventCardFrom(e, onTap: () => onComingSoon(e.title))
+                            .animate()
+                            .fadeIn(duration: 300.ms, delay: (i * 60).ms)
+                            .slideX(begin: .08, end: 0, duration: 300.ms, delay: (i * 60).ms, curve: Curves.easeOutCubic),
                         const SizedBox(width: 12),
                       ],
                     ],
@@ -434,11 +456,23 @@ class _HomeFeed extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 12),
-            Padding(padding: _hpad, child: CampaignCard(campaign: campaigns.first)),
+            Padding(
+              padding: _hpad,
+              child: CampaignCard(campaign: campaigns.first)
+                  .animate()
+                  .fadeIn(duration: 320.ms)
+                  .slideY(begin: .05, end: 0, duration: 320.ms, curve: Curves.easeOutCubic),
+            ),
           ],
           if (!hidden.contains('quote')) ...[
             const SizedBox(height: 18),
-            const Padding(padding: _hpad, child: QuoteCard()),
+            Padding(
+              padding: _hpad,
+              child: const QuoteCard()
+                  .animate()
+                  .fadeIn(duration: 320.ms)
+                  .slideY(begin: .05, end: 0, duration: 320.ms, curve: Curves.easeOutCubic),
+            ),
           ],
         ],
       ),
@@ -486,7 +520,7 @@ class _HomeFeed extends ConsumerWidget {
                 body: priority.body,
                 timeLabel: priority.relativeLabel,
                 onRead: () => onComingSoon("Lire l'annonce"),
-              ),
+              ).animate().fadeIn(duration: 320.ms).slideY(begin: .05, end: 0, duration: 320.ms, curve: Curves.easeOutCubic),
             ))
             ..add(const SizedBox(height: 18));
         }
@@ -517,6 +551,7 @@ class _HomeFeed extends ConsumerWidget {
                 headerHeight: 148,
                 title: post.title,
                 body: post.body,
+                imageUrl: post.imageUrl,
                 authorInitials: post.authorInitials,
                 authorColor: visual.authorColor,
                 authorName: post.authorName,

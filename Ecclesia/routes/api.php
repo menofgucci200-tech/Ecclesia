@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\HomeController;
 use App\Http\Controllers\Api\LiturgyController;
 use App\Http\Controllers\Api\MovementController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ParishController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ProfileController;
@@ -53,6 +54,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // The parish feed ("Fil paroissial") for the authenticated faithful.
     Route::get('parish/announcements', [AnnouncementController::class, 'index']);
 
+    // Notification center (bell icon): parish feed against a read watermark.
+    Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::get('notifications', [NotificationController::class, 'index']);
+    Route::post('notifications/read', [NotificationController::class, 'markRead']);
+
     // Aggregated home screen (liturgy of the day + parish schedule + headline).
     Route::get('home', [HomeController::class, 'index']);
 
@@ -62,6 +68,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Agenda — major liturgical feasts (LitCal) + parish events.
     Route::get('agenda', [AgendaController::class, 'index']);
+    Route::post('agenda/events/{event}/rsvp', [AgendaController::class, 'toggleRsvp'])->whereNumber('event');
 
     // Profile — edit identity/avatar and app preferences.
     Route::post('profile', [ProfileController::class, 'update']);
