@@ -1,11 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/dio_client.dart';
+import '../../../../core/storage/cache_service.dart';
 import '../../data/datasources/home_remote_data_source.dart';
 import '../../data/models/home_data.dart';
 
 final homeRemoteDataSourceProvider = Provider<HomeRemoteDataSource>(
-  (ref) => HomeRemoteDataSource(ref.read(dioProvider)),
+  (ref) => HomeRemoteDataSource(ref.read(dioProvider), ref.read(cacheServiceProvider)),
 );
 
 /// Aggregated home payload for the authenticated faithful.

@@ -47,13 +47,11 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(foregroundColor: AppColors.navy),
       ),
-      snackBarTheme: SnackBarThemeData(
+      snackBarTheme: const SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        insetPadding: const EdgeInsets.all(AppDimens.lg),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppDimens.radiusMd),
-        ),
-        contentTextStyle: const TextStyle(color: AppColors.white, fontSize: 14),
+        insetPadding: EdgeInsets.all(AppDimens.lg),
+        shape: StadiumBorder(),
+        contentTextStyle: TextStyle(color: AppColors.white, fontSize: 14, fontWeight: FontWeight.w600),
       ),
     );
   }

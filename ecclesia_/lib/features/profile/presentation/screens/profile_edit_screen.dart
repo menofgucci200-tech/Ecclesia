@@ -6,6 +6,9 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_dimens.dart';
+import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/primary_button.dart';
 import '../../../auth/presentation/providers/session_controller.dart';
 import '../../data/profile_remote_data_source.dart';
 
@@ -72,7 +75,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Éditer mon profil')),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppDimens.screenPadding),
         children: [
           Center(
             child: Stack(
@@ -86,7 +89,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                   child: (_pickedPath == null && u?.avatarUrl == null)
                       ? Text(
                           ((u?.firstName.isNotEmpty ?? false ? u!.firstName[0] : '') + (u?.lastName.isNotEmpty ?? false ? u!.lastName[0] : '')).toUpperCase(),
-                          style: const TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.w700),
+                          style: const TextStyle(color: AppColors.white, fontSize: 30, fontWeight: FontWeight.w700),
                         )
                       : null,
                 ),
@@ -106,49 +109,21 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 24),
-          _Field(label: 'Prénom', controller: _first),
-          const SizedBox(height: 14),
-          _Field(label: 'Nom', controller: _last),
-          const SizedBox(height: 14),
-          _Field(label: 'E-mail', controller: _email, keyboardType: TextInputType.emailAddress),
-          const SizedBox(height: 28),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.navy, padding: const EdgeInsets.symmetric(vertical: 15)),
-            onPressed: _saving ? null : _save,
-            child: _saving
-                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : const Text('Enregistrer', style: TextStyle(fontWeight: FontWeight.w700)),
+          const SizedBox(height: AppDimens.xl),
+          AppTextField(label: 'Prénom', controller: _first),
+          const SizedBox(height: AppDimens.lg),
+          AppTextField(label: 'Nom', controller: _last),
+          const SizedBox(height: AppDimens.lg),
+          AppTextField(label: 'E-mail', controller: _email, keyboardType: TextInputType.emailAddress),
+          const SizedBox(height: AppDimens.xxl),
+          PrimaryButton(
+            label: 'Enregistrer',
+            onPressed: _save,
+            isLoading: _saving,
+            trailingIcon: null,
           ),
         ],
       ),
-    );
-  }
-}
-
-class _Field extends StatelessWidget {
-  const _Field({required this.label, required this.controller, this.keyboardType});
-  final String label;
-  final TextEditingController controller;
-  final TextInputType? keyboardType;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textPrimary)),
-        const SizedBox(height: 6),
-        TextField(
-          controller: controller,
-          keyboardType: keyboardType,
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: AppColors.surfaceMuted,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-          ),
-        ),
-      ],
     );
   }
 }

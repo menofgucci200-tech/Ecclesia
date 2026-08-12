@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/dio_client.dart';
+import '../../../../core/storage/cache_service.dart';
 import '../../domain/entities/register_params.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_remote_data_source.dart';
@@ -63,7 +64,7 @@ class AuthRepositoryImpl implements AuthRepository {
 }
 
 final authRemoteDataSourceProvider = Provider<AuthRemoteDataSource>((ref) {
-  return AuthRemoteDataSource(ref.read(dioProvider));
+  return AuthRemoteDataSource(ref.read(dioProvider), ref.read(cacheServiceProvider));
 });
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {

@@ -2,6 +2,8 @@ import 'package:dio/dio.dart';
 
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/network/cached_fetch.dart';
+import '../../../../core/storage/cache_service.dart';
 import '../../../../core/utils/phone_helper.dart';
 import '../../domain/entities/register_params.dart';
 import '../models/auth_result_model.dart';
@@ -10,9 +12,10 @@ import '../models/user_model.dart';
 /// Talks to the `/auth/*` endpoints and translates transport errors into typed
 /// [ApiException]s. Contains no business logic.
 class AuthRemoteDataSource {
-  AuthRemoteDataSource(this._dio);
+  AuthRemoteDataSource(this._dio, this._cache);
 
   final Dio _dio;
+  final CacheService _cache;
 
   static const String _deviceName = 'ecclesia-mobile-app';
 
@@ -53,11 +56,16 @@ class AuthRemoteDataSource {
     });
   }
 
+  /// Cached so a previously-authenticated user still lands on their
+  /// dashboard (with the last-known profile) when there is no connectivity,
+  /// instead of being bounced back to onboarding.
   Future<UserModel> fetchMe() async {
-    return _guard(() async {
-      final response = await _dio.get<Map<String, dynamic>>(ApiConstants.me);
-      return UserModel.fromJson(response.data!['user'] as Map<String, dynamic>);
-    });
+    final json = await fetchJsonWithCache(
+      cache: _cache,
+      cacheKey: 'me',
+      request: () => _dio.get<Map<String, dynamic>>(ApiConstants.me),
+    );
+    return UserModel.fromJson(json['user'] as Map<String, dynamic>);
   }
 
   Future<void> logout() async {

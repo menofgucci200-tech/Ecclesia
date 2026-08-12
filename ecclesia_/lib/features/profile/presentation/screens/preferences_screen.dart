@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_dimens.dart';
+import '../../../../core/widgets/app_card.dart';
+import '../../../../core/widgets/primary_button.dart';
 import '../../../auth/presentation/providers/session_controller.dart';
 import '../../data/profile_remote_data_source.dart';
 
@@ -62,37 +65,41 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Personnaliser l\'application')),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppDimens.screenPadding),
         children: [
           const Text('Que voir en priorité ?', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.navyDark)),
           const SizedBox(height: 4),
           const Text('Choisissez le contenu affiché en premier sur l\'accueil.', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppDimens.md),
           _PriorityTile(label: 'Contenu de ma paroisse', value: 'parish', groupValue: _priority, onTap: () => setState(() => _priority = 'parish')),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppDimens.sm),
           _PriorityTile(label: 'Contenu de mes mouvements', value: 'movements', groupValue: _priority, onTap: () => setState(() => _priority = 'movements')),
 
-          const SizedBox(height: 28),
+          const SizedBox(height: AppDimens.xxl),
           const Text('Sections de l\'accueil', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.navyDark)),
           const SizedBox(height: 4),
           const Text('Activez ou masquez ce que vous voulez voir.', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-          const SizedBox(height: 8),
-          ..._sections.map((s) => SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                activeColor: AppColors.navy,
-                title: Text(s.$2),
-                value: !_hidden.contains(s.$1),
-                onChanged: (on) => setState(() => on ? _hidden.remove(s.$1) : _hidden.add(s.$1)),
-              )),
-
-          const SizedBox(height: 24),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.navy, padding: const EdgeInsets.symmetric(vertical: 15)),
-            onPressed: _saving ? null : _save,
-            child: _saving
-                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : const Text('Enregistrer', style: TextStyle(fontWeight: FontWeight.w700)),
+          const SizedBox(height: AppDimens.sm),
+          AppCard(
+            color: AppColors.surfaceMuted,
+            borderColor: Colors.transparent,
+            padding: const EdgeInsets.symmetric(horizontal: AppDimens.md),
+            child: Column(
+              children: [
+                for (var i = 0; i < _sections.length; i++)
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    activeThumbColor: AppColors.navy,
+                    title: Text(_sections[i].$2),
+                    value: !_hidden.contains(_sections[i].$1),
+                    onChanged: (on) => setState(() => on ? _hidden.remove(_sections[i].$1) : _hidden.add(_sections[i].$1)),
+                  ),
+              ],
+            ),
           ),
+
+          const SizedBox(height: AppDimens.xl),
+          PrimaryButton(label: 'Enregistrer', onPressed: _save, isLoading: _saving, trailingIcon: null),
         ],
       ),
     );
@@ -109,23 +116,17 @@ class _PriorityTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final selected = value == groupValue;
-    return InkWell(
+    return AppCard(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.navy.withValues(alpha: .06) : AppColors.surfaceMuted,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: selected ? AppColors.navy : Colors.transparent, width: 1.5),
-        ),
-        child: Row(
-          children: [
-            Icon(selected ? Icons.radio_button_checked : Icons.radio_button_off, color: selected ? AppColors.navy : AppColors.textHint, size: 22),
-            const SizedBox(width: 12),
-            Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: selected ? AppColors.navy : AppColors.textPrimary)),
-          ],
-        ),
+      color: selected ? AppColors.navy.withValues(alpha: .06) : AppColors.surfaceMuted,
+      borderColor: selected ? AppColors.navy : Colors.transparent,
+      radius: AppDimens.radiusMd,
+      child: Row(
+        children: [
+          Icon(selected ? Icons.radio_button_checked : Icons.radio_button_off, color: selected ? AppColors.navy : AppColors.textHint, size: 22),
+          const SizedBox(width: AppDimens.md),
+          Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: selected ? AppColors.navy : AppColors.textPrimary)),
+        ],
       ),
     );
   }

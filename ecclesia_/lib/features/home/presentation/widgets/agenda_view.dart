@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/widgets/error_state.dart';
+import '../../../../core/widgets/skeleton.dart';
 import '../../data/models/home_data.dart';
 import '../providers/home_provider.dart';
 import '../screens/liturgy_screen.dart';
@@ -41,8 +44,20 @@ class _AgendaViewState extends ConsumerState<AgendaView> {
     final async = ref.watch(agendaProvider);
 
     return async.when(
-      loading: () => Center(child: CircularProgressIndicator(color: widget.seasonColor)),
-      error: (e, _) => _Message(icon: Icons.wifi_off_rounded, text: 'Impossible de charger l\'agenda.', onRetry: () => ref.invalidate(agendaProvider)),
+      loading: () => ListView(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 30),
+        physics: const NeverScrollableScrollPhysics(),
+        children: const [
+          SkeletonBox(width: double.infinity, height: 300, radius: 20),
+          SizedBox(height: 22),
+          SkeletonBox(width: 140, height: 15),
+          SizedBox(height: 12),
+          SkeletonListTile(),
+          SizedBox(height: 12),
+          SkeletonListTile(),
+        ],
+      ),
+      error: (e, _) => ErrorState(message: 'Impossible de charger l\'agenda.', onRetry: () => ref.invalidate(agendaProvider)),
       data: (events) {
         // Index events by day.
         final byDay = <String, List<AgendaEvent>>{};
@@ -75,7 +90,7 @@ class _AgendaViewState extends ConsumerState<AgendaView> {
                   style: const TextStyle(fontSize: 12, color: HomePalette.textBody)),
               const SizedBox(height: 12),
               if (weekEvents.isEmpty)
-                const Text('Aucun événement cette semaine.', style: TextStyle(fontSize: 13, color: HomePalette.textBody))
+                const EmptyState(message: 'Aucun événement cette semaine.', icon: Icons.event_busy_outlined)
               else
                 ...weekEvents.map((e) => _weekTile(e)),
             ],
@@ -417,46 +432,32 @@ class _LiturgyByDateScreen extends ConsumerWidget {
     final async = ref.watch(liturgyForDateProvider(key));
 
     return async.when(
-      loading: () => const Scaffold(
+      loading: () => Scaffold(
         backgroundColor: HomePalette.screenBg,
-        body: Center(child: CircularProgressIndicator(color: HomePalette.navy)),
+        appBar: AppBar(backgroundColor: HomePalette.navy, foregroundColor: Colors.white),
+        body: const Padding(
+          padding: EdgeInsets.all(20),
+          child: SkeletonParagraph(lines: 6),
+        ),
       ),
       error: (e, _) => Scaffold(
+        backgroundColor: HomePalette.screenBg,
         appBar: AppBar(backgroundColor: HomePalette.navy, foregroundColor: Colors.white),
-        body: const Center(child: Text('Lectures indisponibles.')),
+        body: const Padding(
+          padding: EdgeInsets.all(20),
+          child: ErrorState(message: 'Lectures indisponibles.'),
+        ),
       ),
       data: (liturgy) => liturgy == null
           ? Scaffold(
+              backgroundColor: HomePalette.screenBg,
               appBar: AppBar(backgroundColor: HomePalette.navy, foregroundColor: Colors.white, title: const Text('Liturgie')),
-              body: const Center(child: Text('Lectures indisponibles pour ce jour.')),
+              body: const Padding(
+                padding: EdgeInsets.all(20),
+                child: EmptyState(message: 'Lectures indisponibles pour ce jour.', icon: Icons.menu_book_outlined),
+              ),
             )
           : LiturgyScreen(liturgy: liturgy),
-    );
-  }
-}
-
-class _Message extends StatelessWidget {
-  const _Message({required this.icon, required this.text, this.onRetry});
-
-  final IconData icon;
-  final String text;
-  final VoidCallback? onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 44, color: HomePalette.textFaint),
-          const SizedBox(height: 12),
-          Text(text, style: const TextStyle(color: HomePalette.textBody)),
-          if (onRetry != null) ...[
-            const SizedBox(height: 12),
-            TextButton(onPressed: onRetry, child: const Text('Réessayer')),
-          ],
-        ],
-      ),
     );
   }
 }

@@ -9,6 +9,11 @@ void main() {
 
     await tester.pumpWidget(const ProviderScope(child: EcclesiaApp()));
     await tester.pump();
+    // Clears the splash screen's one-shot delayed entrance animation
+    // (flutter_animate schedules it via a Timer) before the tree is torn
+    // down — the indefinite CircularProgressIndicator ticker means
+    // pumpAndSettle() would never return, so a bounded pump is used instead.
+    await tester.pump(const Duration(milliseconds: 500));
 
     expect(tester.takeException(), isNull);
   });
