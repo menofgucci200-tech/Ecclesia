@@ -66,6 +66,7 @@ class ParishController extends Controller implements HasMiddleware
         $login = $data['login'];
         $password = $data['password'];
         unset($data['login'], $data['password']);
+        $data = $this->stripBlankSecrets($data);
 
         $data['logo'] = $request->hasFile('logo')
             ? $request->file('logo')->store('parishes', 'public')
@@ -106,6 +107,7 @@ class ParishController extends Controller implements HasMiddleware
         $login = $data['login'] ?? null;
         $password = $data['password'] ?? null;
         unset($data['login'], $data['password']);
+        $data = $this->stripBlankSecrets($data);
 
         if ($request->hasFile('logo')) {
             if ($parish->logo) {
@@ -179,4 +181,23 @@ class ParishController extends Controller implements HasMiddleware
             ->route('super.parishes.index')
             ->with('success', "La paroisse « {$name} » a été supprimée.");
     }
+
+    /**
+     * Drop blank CinetPay secret fields so an empty input keeps the stored key
+     * (the form never re-displays secrets).
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function stripBlankSecrets(array $data): array
+    {
+        foreach (['cinetpay_api_key', 'cinetpay_secret_key'] as $secret) {
+            if (empty($data[$secret])) {
+                unset($data[$secret]);
+            }
+        }
+
+        return $data;
+    }
 }
+

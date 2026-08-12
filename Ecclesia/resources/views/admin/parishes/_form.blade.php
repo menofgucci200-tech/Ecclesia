@@ -142,6 +142,48 @@
         </div>
     </div>
 
+    {{-- ============ Paiements CinetPay (optionnel) ============ --}}
+    <div class="card card-pad">
+        <div class="mb-4 flex items-center gap-2">
+            <h3 class="text-base font-bold">Paiements CinetPay</h3>
+            @if($parish->hasCinetPay())
+                <span class="badge-success">Activés</span>
+            @else
+                <span class="badge-muted">Optionnel</span>
+            @endif
+        </div>
+        <p class="mb-4 text-sm text-[color:var(--color-ink-soft)]">
+            Identifiants du compte marchand <strong>de la paroisse</strong>. Les fonds sont versés directement
+            sur ce compte. La paroisse peut aussi les saisir elle-même dans « Config. paiements ».
+        </p>
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <div class="sm:col-span-2">
+                <label class="field-label" for="cinetpay_site_id">Site ID</label>
+                <input id="cinetpay_site_id" name="cinetpay_site_id" type="text" value="{{ old('cinetpay_site_id', $parish->cinetpay_site_id) }}" class="input font-mono" autocomplete="off">
+                @error('cinetpay_site_id') <p class="field-error">{{ $message }}</p> @enderror
+            </div>
+            <div>
+                <label class="field-label" for="cinetpay_api_key">Clé API</label>
+                <input id="cinetpay_api_key" name="cinetpay_api_key" type="text" value="" class="input font-mono" autocomplete="off"
+                       placeholder="{{ $parish->cinetpay_api_key ? '•••••••• (laisser vide pour conserver)' : 'Clé API' }}">
+                @error('cinetpay_api_key') <p class="field-error">{{ $message }}</p> @enderror
+            </div>
+            <div>
+                <label class="field-label" for="cinetpay_secret_key">Clé secrète</label>
+                <input id="cinetpay_secret_key" name="cinetpay_secret_key" type="text" value="" class="input font-mono" autocomplete="off"
+                       placeholder="{{ $parish->cinetpay_secret_key ? '•••••••• (laisser vide pour conserver)' : 'Clé secrète' }}">
+                @error('cinetpay_secret_key') <p class="field-error">{{ $message }}</p> @enderror
+            </div>
+            <div class="sm:col-span-2">
+                <label class="field-label" for="mass_offering_amount">Offrande de messe par défaut (F CFA)</label>
+                <input id="mass_offering_amount" name="mass_offering_amount" type="number" min="0" step="100"
+                       value="{{ old('mass_offering_amount', $parish->mass_offering_amount) }}" class="input" placeholder="3000">
+                <p class="field-hint">Proposé par défaut pour les demandes de messe. Vide = 3 000 F.</p>
+                @error('mass_offering_amount') <p class="field-error">{{ $message }}</p> @enderror
+            </div>
+        </div>
+    </div>
+
     <div class="flex items-center justify-end gap-3">
         <a href="{{ route('super.parishes.index') }}" class="btn-ghost">Annuler</a>
         <button type="submit" class="btn-primary">

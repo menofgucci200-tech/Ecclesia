@@ -49,6 +49,12 @@ class ParishRequest extends FormRequest
             'phone' => ['nullable', 'string', 'max:30'],
             'email' => ['nullable', 'email', 'max:255'],
             'status' => ['required', Rule::in(ParishStatus::values())],
+
+            // --- Paiements CinetPay (par paroisse) -------------------------
+            'cinetpay_site_id' => ['nullable', 'string', 'max:255'],
+            'cinetpay_api_key' => ['nullable', 'string', 'max:2000'],
+            'cinetpay_secret_key' => ['nullable', 'string', 'max:2000'],
+            'mass_offering_amount' => ['nullable', 'integer', 'min:0', 'max:100000000'],
         ];
     }
 

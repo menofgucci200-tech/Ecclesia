@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../../../home/presentation/screens/gospel_screen.dart';
 import '../../../home/presentation/screens/liturgy_today_screen.dart';
 import '../../../home/presentation/theme/home_palette.dart';
+import '../../../bible/presentation/bible_home_screen.dart';
+import '../../../intentions/presentation/intentions_screen.dart';
 import '../../../movements/presentation/screens/movements_screen.dart';
+import '../../../prayers/presentation/prayers_screen.dart';
+import '../../../saints/presentation/saints_screen.dart';
 
 /// The "Vie & Foi" hub: a grid of illustrated cards, each opening a universe.
 class LifeFaithScreen extends StatelessWidget {
@@ -22,12 +27,19 @@ class LifeFaithScreen extends StatelessWidget {
       _LifeCard('📖', 'Liturgie', const [Color(0xFF1F7A55), Color(0xFF2FA173)],
           onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const LiturgyTodayScreen()))),
       _LifeCard('✝️', 'Évangile', const [Color(0xFF8A6D1B), Color(0xFFC6A02C)],
-          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const LiturgyTodayScreen()))),
-      _LifeCard('📚', 'Bible', const [Color(0xFF5B3A94), Color(0xFF8258C4)], onTap: () => _soon(context, 'Bible')),
-      _LifeCard('🙏', 'Prières', const [Color(0xFF1A6B9E), Color(0xFF3A9BCF)], onTap: () => _soon(context, 'Prières')),
-      _LifeCard('📿', 'Chapelets', const [Color(0xFF7A4FB0), Color(0xFF9B6BDD)], onTap: () => _soon(context, 'Chapelets')),
-      _LifeCard('👼', 'Saints', const [Color(0xFFB8901E), Color(0xFFE3B94A)], onTap: () => _soon(context, 'Saints')),
-      _LifeCard('❤️', 'Intentions', const [Color(0xFFB23030), Color(0xFFD45858)], onTap: () => _soon(context, 'Intentions')),
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const GospelScreen()))),
+      _LifeCard('📚', 'Bible', const [Color(0xFF5B3A94), Color(0xFF8258C4)],
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BibleHomeScreen()))),
+      _LifeCard('🙏', 'Prières', const [Color(0xFF1A6B9E), Color(0xFF3A9BCF)],
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => const PrayersScreen(title: 'Prières', categories: ['priere', 'neuvaine', 'litanie'])))),
+      _LifeCard('📿', 'Chapelets', const [Color(0xFF7A4FB0), Color(0xFF9B6BDD)],
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => const PrayersScreen(title: 'Chapelets', categories: ['chapelet'])))),
+      _LifeCard('👼', 'Saints', const [Color(0xFFB8901E), Color(0xFFE3B94A)],
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SaintsScreen()))),
+      _LifeCard('❤️', 'Intentions', const [Color(0xFFB23030), Color(0xFFD45858)],
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const IntentionsScreen()))),
       _LifeCard('🎓', 'Catéchèse', const [Color(0xFF0D6E63), Color(0xFF1FA493)], onTap: () => _soon(context, 'Catéchèse')),
       _LifeCard('🎧', 'Podcasts', const [Color(0xFF3D3A78), Color(0xFF6B66AA)], onTap: () => _soon(context, 'Podcasts')),
       _LifeCard('🎥', 'Enseignements', const [Color(0xFF7B1A4B), Color(0xFFB2306E)], onTap: () => _soon(context, 'Enseignements')),

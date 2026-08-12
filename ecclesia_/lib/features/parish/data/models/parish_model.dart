@@ -15,6 +15,7 @@ class ParishModel extends Equatable {
     this.phone,
     this.email,
     this.logo,
+    this.logoUrl,
     this.status = 'active',
   });
 
@@ -30,6 +31,10 @@ class ParishModel extends Equatable {
   final String? phone;
   final String? email;
   final String? logo;
+
+  /// Absolute URL of the parish logo (from the API's `logo_url`), ready to load
+  /// with [Image.network]. Null when the parish has no logo.
+  final String? logoUrl;
   final String status;
 
   /// A short, human-friendly location line (commune + city) for list cards.
@@ -53,6 +58,7 @@ class ParishModel extends Equatable {
       phone: json['phone'] as String?,
       email: json['email'] as String?,
       logo: json['logo'] as String?,
+      logoUrl: json['logo_url'] as String?,
       status: (json['status'] as String?) ?? 'active',
     );
   }
@@ -71,6 +77,7 @@ class ParishModel extends Equatable {
         phone,
         email,
         logo,
+        logoUrl,
         status,
       ];
 }

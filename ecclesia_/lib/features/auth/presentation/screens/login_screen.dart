@@ -6,9 +6,9 @@ import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimens.dart';
 import '../../../../core/utils/phone_helper.dart';
-import '../../../../core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/auth_step_scaffold.dart';
+import '../../../../core/widgets/message_card.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../router/app_routes.dart';
 import '../providers/login_controller.dart';
@@ -25,6 +25,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _obscure = true;
+  Widget? _banner;
 
   @override
   void dispose() {
@@ -36,6 +37,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Future<void> _submit(String phone) async {
     if (!_isValid) return;
+    if (_banner != null) setState(() => _banner = null);
 
     try {
       await ref.read(loginControllerProvider.notifier).login(
@@ -46,10 +48,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       context.go(AppRoutes.welcomeUser);
     } on UnauthorizedException {
       if (!mounted) return;
-      AppSnackBar.showError(context, 'Mot de passe incorrect.');
+      setState(() => _banner = const MessageCard(
+            kind: MessageKind.warning,
+            icon: Icons.lock_outline_rounded,
+            title: 'Mot de passe incorrect',
+            message:
+                'Le mot de passe saisi ne correspond pas à ce numéro. '
+                'Vérifiez-le, ou utilisez « Mot de passe oublié ? ».',
+          ));
     } on ApiException catch (error) {
       if (!mounted) return;
-      AppSnackBar.showError(context, error.message);
+      setState(() => _banner =
+          MessageCard.fromException(error, onRetry: () => _submit(phone)));
     }
   }
 
@@ -65,6 +75,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return AuthStepScaffold(
       title: 'Bon retour parmi nous',
       subtitle: 'Entrez votre mot de passe pour continuer.',
+      banner: _banner,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -77,7 +88,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             textInputAction: TextInputAction.done,
             prefixIcon: Icons.lock_outline,
             autofocus: true,
-            onChanged: (_) => setState(() {}),
+            onChanged: (_) => setState(() => _banner = null),
             onSubmitted: (_) => _submit(phone),
             suffix: IconButton(
               icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),

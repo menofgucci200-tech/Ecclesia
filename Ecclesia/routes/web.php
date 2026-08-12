@@ -9,11 +9,17 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\HomeController;
 use App\Http\Controllers\Admin\LiturgicalCalendarController;
 use App\Http\Controllers\Admin\LiturgyController;
+use App\Http\Controllers\Admin\MassIntentionController;
 use App\Http\Controllers\Admin\MassTimeController;
 use App\Http\Controllers\Admin\MemberController;
 use App\Http\Controllers\Admin\MovementController;
 use App\Http\Controllers\Admin\ParishController;
 use App\Http\Controllers\Admin\ParishEventController;
+use App\Http\Controllers\Admin\PaymentController as PaymentAdminController;
+use App\Http\Controllers\Admin\PaymentSettingsController;
+use App\Http\Controllers\Admin\PrayerController;
+use App\Http\Controllers\Admin\PrayerIntentionController as PrayerIntentionAdminController;
+use App\Http\Controllers\Admin\SaintController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
@@ -55,6 +61,24 @@ $sharedAdminRoutes = function (string $roleScope): void {
 
         // Fundraising campaigns (dons / cotisations / quêtes).
         Route::resource('campaigns', CampaignController::class)->except(['show']);
+
+        // Spiritual content (Prières & Chapelets): super = common library,
+        // parish = its own content. Both areas can manage.
+        Route::resource('prayers', PrayerController::class)->except(['show']);
+
+        // Prayer-intentions wall moderation.
+        Route::get('intentions', [PrayerIntentionAdminController::class, 'index'])->name('intentions.index');
+        Route::patch('intentions/{intention}/toggle', [PrayerIntentionAdminController::class, 'toggle'])->name('intentions.toggle');
+        Route::delete('intentions/{intention}', [PrayerIntentionAdminController::class, 'destroy'])->name('intentions.destroy');
+
+        // Payments (CinetPay) — tracking + mass-intention management.
+        Route::get('payments', [PaymentAdminController::class, 'index'])->name('payments.index');
+        Route::get('mass-intentions', [MassIntentionController::class, 'index'])->name('mass-intentions.index');
+        Route::patch('mass-intentions/{massIntention}/status', [MassIntentionController::class, 'updateStatus'])->name('mass-intentions.status');
+
+        // CinetPay credentials — each parish configures its own merchant account.
+        Route::get('payment-settings', [PaymentSettingsController::class, 'edit'])->name('payment-settings.edit');
+        Route::put('payment-settings', [PaymentSettingsController::class, 'update'])->name('payment-settings.update');
     });
 };
 
@@ -114,5 +138,13 @@ Route::prefix('super')->name('super.')->group(function () use ($authRoutes, $sha
         Route::get('calendar', [LiturgicalCalendarController::class, 'index'])->name('calendar.index');
         Route::patch('calendar/{event}/toggle', [LiturgicalCalendarController::class, 'toggle'])->name('calendar.toggle');
         Route::post('calendar/resync', [LiturgicalCalendarController::class, 'resync'])->name('calendar.resync');
+
+        // Saint of the day (AELF + Wikipedia FR), auto-filled and editable.
+        Route::get('saints', [SaintController::class, 'index'])->name('saints.index');
+        Route::get('saints/{saint}/edit', [SaintController::class, 'edit'])->name('saints.edit');
+        Route::put('saints/{saint}', [SaintController::class, 'update'])->name('saints.update');
+        Route::patch('saints/{saint}/toggle', [SaintController::class, 'toggle'])->name('saints.toggle');
+        Route::post('saints/{saint}/resync', [SaintController::class, 'resync'])->name('saints.resync');
+        Route::post('saints/sync-upcoming', [SaintController::class, 'syncUpcoming'])->name('saints.sync-upcoming');
     });
 });

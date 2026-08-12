@@ -15,6 +15,7 @@ import '../../../donations/presentation/donations_screen.dart';
 import '../../../life/presentation/screens/life_faith_screen.dart';
 import '../../../movements/data/models/movement.dart';
 import '../../../movements/presentation/providers/movements_provider.dart';
+import '../../../payments/presentation/payments_hub_screen.dart';
 import '../../../movements/presentation/screens/movement_detail_screen.dart';
 import '../../../movements/presentation/screens/movements_screen.dart';
 import '../../data/models/home_data.dart';
@@ -87,13 +88,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: switch (_tab) {
                 0 => _HomeFeed(onComingSoon: _comingSoon),
                 1 => const LifeFaithScreen(),
+                2 => const PaymentsHubScreen(),
                 3 => AgendaView(seasonColor: season.primary),
                 _ => _TabPlaceholder(index: _tab),
               },
             ),
           ],
         ),
-        bottomNavigationBar: HomeBottomNav(currentIndex: _tab, onTap: _onTab, activeColor: season.primary),
+        bottomNavigationBar: HomeBottomNav(
+          currentIndex: _tab,
+          onTap: _onTab,
+          activeColor: season.primary,
+          avatarUrl: ref.watch(currentUserProvider)?.avatarUrl,
+        ),
       ),
     );
   }

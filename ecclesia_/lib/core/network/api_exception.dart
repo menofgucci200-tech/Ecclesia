@@ -11,6 +11,44 @@ sealed class ApiException implements Exception {
   @override
   String toString() => message;
 
+  /// A short, reassuring headline for the error card (never alarming).
+  String get title => switch (this) {
+        NetworkException() => 'Pas de connexion',
+        TimeoutException() => 'Connexion lente',
+        ServerException() => 'Service momentanément indisponible',
+        RateLimitException() => 'Un instant, s\'il vous plaît',
+        ForbiddenException() => 'Réseau bloqué',
+        UnauthorizedException() => 'Session expirée',
+        NotFoundException() => 'Introuvable',
+        ValidationException() => 'Quelques informations à vérifier',
+        RequestCancelledException() => 'Requête annulée',
+        UnknownException() => 'Oups, un souci est survenu',
+      };
+
+  /// Whether offering a "Réessayer" action makes sense for this error.
+  bool get isRetryable => switch (this) {
+        NetworkException() ||
+        TimeoutException() ||
+        ServerException() ||
+        RateLimitException() ||
+        ForbiddenException() ||
+        UnknownException() =>
+          true,
+        _ => false,
+      };
+
+  /// Whether this looks like a connectivity / infrastructure hiccup (as opposed
+  /// to something the user did wrong). Presented gently, in amber, to avoid
+  /// panic — the vast majority of these resolve by simply retrying.
+  bool get isConnectivity => switch (this) {
+        NetworkException() ||
+        TimeoutException() ||
+        ServerException() ||
+        ForbiddenException() =>
+          true,
+        _ => false,
+      };
+
   /// Map a low-level [DioException] into a meaningful domain exception.
   factory ApiException.fromDio(DioException error) {
     switch (error.type) {
@@ -39,7 +77,19 @@ sealed class ApiException implements Exception {
 
     return switch (status) {
       401 => UnauthorizedException(message ?? 'Session expirée. Veuillez vous reconnecter.'),
-      403 => ForbiddenException(message ?? 'Accès non autorisé.'),
+      // A 403 on a public endpoint is almost never the app: it is the host's
+      // firewall (WAF) blocking the network the phone is on — typically a
+      // Wi-Fi whose public IP got flagged. Switching to mobile data or another
+      // Wi-Fi resolves it, so we say exactly that instead of "accès refusé".
+      403 => ForbiddenException(
+          _looksLikeHtml(data)
+              ? 'Votre réseau actuel (souvent le Wi-Fi) est bloqué par le '
+                  'pare-feu du serveur. Passez en données mobiles (4G) ou '
+                  'connectez-vous à un autre Wi-Fi, puis réessayez.'
+              : (message ??
+                  'La connexion a été refusée par le réseau. Passez en 4G ou '
+                      'sur un autre Wi-Fi, puis réessayez.'),
+        ),
       404 => NotFoundException(message ?? 'Ressource introuvable.'),
       422 => ValidationException(
           message ?? 'Certaines informations sont invalides.',
@@ -49,6 +99,17 @@ sealed class ApiException implements Exception {
       >= 500 => const ServerException(),
       _ => UnknownException(message ?? 'Une erreur inattendue est survenue.'),
     };
+  }
+
+  /// True when the body is a raw HTML page (e.g. a WAF/firewall block page)
+  /// rather than a JSON API payload — a strong signal the request was stopped
+  /// by network infrastructure, not by our application.
+  static bool _looksLikeHtml(dynamic data) {
+    if (data is! String) return false;
+    final head = data.trimLeft().toLowerCase();
+    return head.startsWith('<!doctype html') ||
+        head.startsWith('<html') ||
+        head.contains('<title') && head.contains('403');
   }
 
   static String? _extractMessage(dynamic data) {
@@ -76,17 +137,26 @@ sealed class ApiException implements Exception {
 
 class NetworkException extends ApiException {
   const NetworkException()
-      : super('Impossible de contacter le serveur. Vérifiez votre connexion.');
+      : super(
+          'Nous n\'arrivons pas à joindre le serveur. Vérifiez votre connexion '
+          'internet (Wi-Fi ou données mobiles), puis réessayez.',
+        );
 }
 
 class TimeoutException extends ApiException {
   const TimeoutException()
-      : super('Le serveur met trop de temps à répondre. Veuillez réessayer.');
+      : super(
+          'Le serveur met trop de temps à répondre. Cela vient souvent d\'une '
+          'connexion lente — réessayez dans un instant.',
+        );
 }
 
 class ServerException extends ApiException {
   const ServerException()
-      : super('Une erreur est survenue sur le serveur. Veuillez réessayer.');
+      : super(
+          'Le service est momentanément indisponible. Ce n\'est pas de votre '
+          'faute — merci de réessayer dans quelques instants.',
+        );
 }
 
 class UnauthorizedException extends ApiException {
@@ -103,7 +173,10 @@ class NotFoundException extends ApiException {
 
 class RateLimitException extends ApiException {
   const RateLimitException()
-      : super('Trop de tentatives. Veuillez patienter un instant.');
+      : super(
+          'Vous avez fait plusieurs tentatives rapprochées. Patientez une '
+          'minute, puis réessayez tranquillement.',
+        );
 }
 
 class RequestCancelledException extends ApiException {

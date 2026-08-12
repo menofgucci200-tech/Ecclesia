@@ -35,4 +35,17 @@ return [
         ],
     ],
 
+    // CinetPay — Mobile Money & card payments (Orange, MTN, Moov, Wave, Visa).
+    // The module runs in a graceful "not configured" state until these are set.
+    'cinetpay' => [
+        'site_id' => env('CINETPAY_SITE_ID'),
+        'api_key' => env('CINETPAY_API_KEY'),
+        'secret_key' => env('CINETPAY_SECRET_KEY'),
+        'currency' => env('CINETPAY_CURRENCY', 'XOF'),
+        'base_url' => env('CINETPAY_BASE_URL', 'https://api-checkout.cinetpay.com/v2'),
+        // Where the user lands after paying (a lightweight page that tells the
+        // app to poll the payment status).
+        'return_url' => env('CINETPAY_RETURN_URL', env('APP_URL').'/api/payments/cinetpay/return'),
+    ],
+
 ];

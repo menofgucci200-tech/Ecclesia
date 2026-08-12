@@ -11,11 +11,16 @@ class HomeBottomNav extends StatelessWidget {
     required this.currentIndex,
     required this.onTap,
     this.activeColor = HomePalette.navy,
+    this.avatarUrl,
   });
 
   final int currentIndex;
   final ValueChanged<int> onTap;
   final Color activeColor;
+
+  /// When set, the "Profil" tab shows the faithful's photo instead of a
+  /// generic person icon.
+  final String? avatarUrl;
 
   static const List<(IconData, String)> _items = [
     (Icons.home_outlined, 'Accueil'),
@@ -53,6 +58,8 @@ class HomeBottomNav extends StatelessWidget {
                     label: _items[i].$2,
                     active: i == currentIndex,
                     activeColor: activeColor,
+                    // The last tab (Profil) shows the user's avatar when set.
+                    avatarUrl: i == _items.length - 1 ? avatarUrl : null,
                     onTap: () => onTap(i),
                   ),
                 ),
@@ -65,13 +72,14 @@ class HomeBottomNav extends StatelessWidget {
 }
 
 class _NavItem extends StatelessWidget {
-  const _NavItem({required this.icon, required this.label, required this.active, required this.activeColor, required this.onTap});
+  const _NavItem({required this.icon, required this.label, required this.active, required this.activeColor, required this.onTap, this.avatarUrl});
 
   final IconData icon;
   final String label;
   final bool active;
   final Color activeColor;
   final VoidCallback onTap;
+  final String? avatarUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -87,13 +95,29 @@ class _NavItem extends StatelessWidget {
             child: Stack(
               alignment: Alignment.center,
               children: [
-                if (active)
+                if (active && avatarUrl == null)
                   Positioned.fill(
                     child: DecoratedBox(
                       decoration: BoxDecoration(color: activeColor.withValues(alpha: .12), borderRadius: const BorderRadius.all(Radius.circular(100))),
                     ),
                   ),
-                Icon(icon, size: 20, color: color),
+                if (avatarUrl != null)
+                  Container(
+                    width: 24,
+                    height: 24,
+                    clipBehavior: Clip.antiAlias,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: active ? activeColor : Colors.transparent, width: 2),
+                    ),
+                    child: Image.network(
+                      avatarUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => Icon(icon, size: 20, color: color),
+                    ),
+                  )
+                else
+                  Icon(icon, size: 20, color: color),
               ],
             ),
           ),

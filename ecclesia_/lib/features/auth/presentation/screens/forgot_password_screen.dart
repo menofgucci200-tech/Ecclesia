@@ -6,31 +6,40 @@ import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimens.dart';
 import '../../../../core/utils/phone_helper.dart';
-import '../../../../core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/auth_step_scaffold.dart';
+import '../../../../core/widgets/message_card.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../router/app_routes.dart';
 import '../providers/forgot_password_controller.dart';
 import '../providers/registration_draft_controller.dart';
 
 /// Requests a password reset code, sent by e-mail to the account owner.
-class ForgotPasswordScreen extends ConsumerWidget {
+class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
-  Future<void> _send(BuildContext context, WidgetRef ref, String phone) async {
+  @override
+  ConsumerState<ForgotPasswordScreen> createState() =>
+      _ForgotPasswordScreenState();
+}
+
+class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
+  ApiException? _error;
+
+  Future<void> _send(String phone) async {
+    if (_error != null) setState(() => _error = null);
     try {
       final emailHint =
           await ref.read(forgotPasswordControllerProvider.notifier).sendCode(phone);
-      if (!context.mounted) return;
+      if (!mounted) return;
       context.push(AppRoutes.resetPassword, extra: emailHint);
     } on ApiException catch (error) {
-      if (!context.mounted) return;
-      AppSnackBar.showError(context, error.message);
+      if (!mounted) return;
+      setState(() => _error = error);
     }
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final phone = ref.watch(registrationDraftProvider).phone;
     final isLoading = ref.watch(forgotPasswordControllerProvider).isLoading;
 
@@ -38,6 +47,9 @@ class ForgotPasswordScreen extends ConsumerWidget {
       title: 'Mot de passe oublié',
       subtitle:
           'Nous enverrons un code de réinitialisation à l\'adresse e-mail associée à votre compte.',
+      banner: _error == null
+          ? null
+          : MessageCard.fromException(_error!, onRetry: () => _send(phone)),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -80,7 +92,7 @@ class ForgotPasswordScreen extends ConsumerWidget {
       bottom: PrimaryButton(
         label: 'Envoyer le code',
         isLoading: isLoading,
-        onPressed: () => _send(context, ref, phone),
+        onPressed: () => _send(phone),
       ),
     );
   }

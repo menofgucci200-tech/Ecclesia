@@ -41,7 +41,7 @@ class ParishCard extends StatelessWidget {
             padding: const EdgeInsets.all(AppDimens.lg),
             child: Row(
               children: [
-                _LeadingIcon(selected: selected),
+                _LeadingIcon(selected: selected, logoUrl: parish.logoUrl),
                 const SizedBox(width: AppDimens.md),
                 Expanded(
                   child: Column(
@@ -96,26 +96,36 @@ class ParishCard extends StatelessWidget {
 }
 
 class _LeadingIcon extends StatelessWidget {
-  const _LeadingIcon({required this.selected});
+  const _LeadingIcon({required this.selected, this.logoUrl});
 
   final bool selected;
+  final String? logoUrl;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       height: 44,
       width: 44,
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: selected ? AppColors.navy : AppColors.surfaceMuted,
         borderRadius: BorderRadius.circular(AppDimens.radiusMd),
       ),
-      child: Icon(
+      child: logoUrl != null
+          ? Image.network(
+              logoUrl!,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => _fallback(),
+            )
+          : _fallback(),
+    );
+  }
+
+  Widget _fallback() => Icon(
         Icons.church_outlined,
         color: selected ? AppColors.white : AppColors.navy,
         size: 22,
-      ),
-    );
-  }
+      );
 }
 
 class _SelectionIndicator extends StatelessWidget {

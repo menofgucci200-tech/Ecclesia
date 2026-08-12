@@ -60,6 +60,7 @@ class ProfileScreen extends ConsumerWidget {
           _ParishSection(
             name: user?.parish?.name,
             location: user?.parish?.locationLine,
+            logoUrl: user?.parish?.logoUrl,
             onChange: () => context.push(AppRoutes.chooseParish),
           ),
           const SizedBox(height: AppDimens.lg),
@@ -102,10 +103,12 @@ class _ParishSection extends StatelessWidget {
     required this.name,
     required this.location,
     required this.onChange,
+    this.logoUrl,
   });
 
   final String? name;
   final String? location;
+  final String? logoUrl;
   final VoidCallback onChange;
 
   @override
@@ -124,8 +127,16 @@ class _ParishSection extends StatelessWidget {
               Container(
                 height: 44,
                 width: 44,
+                clipBehavior: Clip.antiAlias,
                 decoration: const BoxDecoration(color: AppColors.navy, shape: BoxShape.circle),
-                child: const Icon(Icons.church_outlined, color: AppColors.white, size: 22),
+                child: logoUrl != null
+                    ? Image.network(
+                        logoUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) =>
+                            const Icon(Icons.church_outlined, color: AppColors.white, size: 22),
+                      )
+                    : const Icon(Icons.church_outlined, color: AppColors.white, size: 22),
               ),
               const SizedBox(width: AppDimens.md),
               Expanded(

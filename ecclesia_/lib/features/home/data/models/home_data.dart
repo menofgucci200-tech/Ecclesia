@@ -94,6 +94,7 @@ class LiturgyModel {
     this.week,
     this.gospelRef,
     this.gospelTitle,
+    this.meditation,
     this.readings = const [],
   });
 
@@ -104,7 +105,16 @@ class LiturgyModel {
   final String? week;
   final String? gospelRef;
   final String? gospelTitle;
+  final String? meditation;
   final List<ReadingModel> readings;
+
+  /// The Gospel reading of the day, if present.
+  ReadingModel? get gospel {
+    for (final r in readings) {
+      if (r.type == 'evangile') return r;
+    }
+    return null;
+  }
 
   factory LiturgyModel.fromJson(Map<String, dynamic> json) {
     final gospel = json['gospel'] as Map<String, dynamic>?;
@@ -116,6 +126,7 @@ class LiturgyModel {
       week: json['week'] as String?,
       gospelRef: gospel?['ref'] as String?,
       gospelTitle: gospel?['title'] as String?,
+      meditation: json['meditation'] as String?,
       readings: (json['readings'] as List<dynamic>? ?? const [])
           .map((e) => ReadingModel.fromJson(e as Map<String, dynamic>))
           .toList(),

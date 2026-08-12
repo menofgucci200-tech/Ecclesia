@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\HomeController;
 use App\Http\Controllers\Api\LiturgyController;
 use App\Http\Controllers\Api\MovementController;
 use App\Http\Controllers\Api\ParishController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\UserParishController;
 use Illuminate\Support\Facades\Route;
@@ -34,6 +35,10 @@ Route::prefix('auth')->group(function () {
         Route::post('change-password', [AuthController::class, 'changePassword']);
     });
 });
+
+// CinetPay callbacks — public (server-to-server webhook + browser return page).
+Route::post('payments/cinetpay/notify', [PaymentController::class, 'notify']);
+Route::match(['get', 'post'], 'payments/cinetpay/return', [PaymentController::class, 'returnPage']);
 
 Route::middleware('auth:sanctum')->group(function () {
     // Parish discovery (order matters: static segments before the wildcard).
@@ -72,4 +77,23 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('movements/{movement}', [MovementController::class, 'show'])->whereNumber('movement');
     Route::post('movements/{movement}/join', [MovementController::class, 'join'])->whereNumber('movement');
     Route::delete('movements/{movement}/leave', [MovementController::class, 'leave'])->whereNumber('movement');
+
+    // Spiritual content (Prières & Chapelets) for "Vie & Foi".
+    Route::get('prayers', [\App\Http\Controllers\Api\PrayerController::class, 'index']);
+
+    // Saint of the day (AELF + Wikipedia FR).
+    Route::get('saints', [\App\Http\Controllers\Api\SaintController::class, 'today']);
+    Route::get('saints/{date}', [\App\Http\Controllers\Api\SaintController::class, 'show'])->where('date', '\d{4}-\d{2}-\d{2}');
+
+    // Prayer intentions wall (parish community).
+    Route::get('intentions', [\App\Http\Controllers\Api\PrayerIntentionController::class, 'index']);
+    Route::post('intentions', [\App\Http\Controllers\Api\PrayerIntentionController::class, 'store'])->middleware('throttle:20,1');
+    Route::post('intentions/{intention}/pray', [\App\Http\Controllers\Api\PrayerIntentionController::class, 'pray'])->whereNumber('intention');
+    Route::delete('intentions/{intention}', [\App\Http\Controllers\Api\PrayerIntentionController::class, 'destroy'])->whereNumber('intention');
+
+    // Payments (Mobile Money / card via CinetPay): mass requests, quête, don…
+    Route::get('payments/options', [PaymentController::class, 'options']);
+    Route::get('payments/mine', [PaymentController::class, 'mine']);
+    Route::post('payments', [PaymentController::class, 'store']);
+    Route::get('payments/{reference}', [PaymentController::class, 'show'])->where('reference', 'ECC-[A-Za-z0-9\-]+');
 });

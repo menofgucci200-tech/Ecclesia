@@ -37,6 +37,20 @@ class Parish extends Model
         'logo',
         'status',
         'subscription_amount',
+        'cinetpay_site_id',
+        'cinetpay_api_key',
+        'cinetpay_secret_key',
+        'mass_offering_amount',
+    ];
+
+    /**
+     * Sensitive fields never serialised to JSON/API responses.
+     *
+     * @var list<string>
+     */
+    protected $hidden = [
+        'cinetpay_api_key',
+        'cinetpay_secret_key',
     ];
 
     /**
@@ -49,7 +63,22 @@ class Parish extends Model
         return [
             'status' => ParishStatus::class,
             'subscription_amount' => 'integer',
+            'cinetpay_api_key' => 'encrypted',
+            'cinetpay_secret_key' => 'encrypted',
+            'mass_offering_amount' => 'integer',
         ];
+    }
+
+    /** Whether this parish can receive online payments (CinetPay configured). */
+    public function hasCinetPay(): bool
+    {
+        return filled($this->cinetpay_site_id) && filled($this->cinetpay_api_key);
+    }
+
+    /** Default mass-offering amount (XOF); 3000 for most parishes. */
+    public function massOfferingAmount(): int
+    {
+        return $this->mass_offering_amount ?: 3000;
     }
 
     /**

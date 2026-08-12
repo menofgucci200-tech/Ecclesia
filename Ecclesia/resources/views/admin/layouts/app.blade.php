@@ -51,12 +51,27 @@
                     <a href="{{ admin_route('calendar.index') }}" @class(['nav-link', 'nav-link-active' => admin_route_is('calendar.*')])>
                         <x-icon name="calendar" class="h-5 w-5" /> Calendrier
                     </a>
+                    <a href="{{ admin_route('saints.index') }}" @class(['nav-link', 'nav-link-active' => admin_route_is('saints.*')])>
+                        <x-icon name="sparkles" class="h-5 w-5" /> Saints du jour
+                    </a>
                 @endif
                 <a href="{{ admin_route('members.index') }}" @class(['nav-link', 'nav-link-active' => admin_route_is('members.*')])>
                     <x-icon name="users" class="h-5 w-5" /> Fidèles
                 </a>
                 <a href="{{ admin_route('announcements.index') }}" @class(['nav-link', 'nav-link-active' => admin_route_is('announcements.*')])>
                     <x-icon name="megaphone" class="h-5 w-5" /> Annonces
+                </a>
+                <a href="{{ admin_route('payments.index') }}" @class(['nav-link', 'nav-link-active' => admin_route_is('payments.*')])>
+                    <x-icon name="credit-card" class="h-5 w-5" /> Paiements
+                </a>
+                <a href="{{ admin_route('mass-intentions.index') }}" @class(['nav-link', 'nav-link-active' => admin_route_is('mass-intentions.*')])>
+                    <x-icon name="book" class="h-5 w-5" /> Demandes de messe
+                </a>
+                <a href="{{ admin_route('prayers.index') }}" @class(['nav-link', 'nav-link-active' => admin_route_is('prayers.*')])>
+                    <x-icon name="heart" class="h-5 w-5" /> Prières & Chapelets
+                </a>
+                <a href="{{ admin_route('intentions.index') }}" @class(['nav-link', 'nav-link-active' => admin_route_is('intentions.*')])>
+                    <x-icon name="megaphone" class="h-5 w-5" /> Intentions de prière
                 </a>
                 @if(auth()->user()->managedParishId() !== null)
                     <a href="{{ admin_route('mass-times.index') }}" @class(['nav-link', 'nav-link-active' => admin_route_is('mass-times.*')])>
@@ -70,6 +85,9 @@
                     </a>
                     <a href="{{ admin_route('campaigns.index') }}" @class(['nav-link', 'nav-link-active' => admin_route_is('campaigns.*')])>
                         <x-icon name="gift" class="h-5 w-5" /> Dons & collectes
+                    </a>
+                    <a href="{{ admin_route('payment-settings.edit') }}" @class(['nav-link', 'nav-link-active' => admin_route_is('payment-settings.*')])>
+                        <x-icon name="credit-card" class="h-5 w-5" /> Config. paiements
                     </a>
                 @endif
             </nav>

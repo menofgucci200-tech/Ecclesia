@@ -18,7 +18,16 @@ final dioProvider = Provider<Dio>((ref) {
       sendTimeout: ApiConstants.sendTimeout,
       contentType: Headers.jsonContentType,
       responseType: ResponseType.json,
-      headers: {'Accept': 'application/json'},
+      headers: {
+        'Accept': 'application/json',
+        // Identify ourselves with a clean, explicit User-Agent instead of the
+        // default `Dart/x.y (dart:io)`, which edge WAFs (Hostinger hCDN) tend to
+        // score as a bot and may block with a 403 from flagged mobile IPs.
+        'User-Agent': 'EcclesiaApp/1.0 (Android)',
+        // Mark the call as a programmatic API request (helps WAF/CORS heuristics
+        // treat it as a legitimate app call rather than anonymous traffic).
+        'X-Requested-With': 'com.ecclesia.app',
+      },
     ),
   );
 

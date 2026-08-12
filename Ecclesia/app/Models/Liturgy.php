@@ -16,6 +16,7 @@ class Liturgy extends Model
         'color',
         'week',
         'readings',
+        'meditation',
         'source',
         'is_hidden',
         'synced_at',

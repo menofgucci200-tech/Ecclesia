@@ -44,6 +44,16 @@
             </div>
         </div>
 
+        <div class="card card-pad">
+            <div class="mb-2 flex items-center gap-2">
+                <h3 class="text-base font-bold">Méditation du jour</h3>
+                <span class="badge-gold">Évangile enrichi</span>
+            </div>
+            <p class="mb-3 text-xs text-[color:var(--color-ink-soft)]">Un commentaire ou une méditation sur l'Évangile, affiché aux fidèles dans « Évangile du jour ». Facultatif.</p>
+            <textarea id="meditation" name="meditation" class="textarea min-h-[140px]" placeholder="Écrivez ici la méditation du jour…">{{ old('meditation', $liturgy->meditation) }}</textarea>
+            @error('meditation') <p class="field-error">{{ $message }}</p> @enderror
+        </div>
+
         @foreach(($liturgy->readings ?? []) as $i => $reading)
             <div class="card card-pad">
                 <div class="mb-4 flex items-center gap-2">

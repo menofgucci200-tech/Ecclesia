@@ -62,6 +62,7 @@ class LiturgyController extends Controller implements HasMiddleware
             'season' => ['nullable', 'string', 'max:255'],
             'color' => ['nullable', 'string', 'max:50'],
             'week' => ['nullable', 'string', 'max:255'],
+            'meditation' => ['nullable', 'string'],
             'readings' => ['nullable', 'array'],
             'readings.*.type' => ['required', 'string', 'max:30'],
             'readings.*.ref' => ['nullable', 'string', 'max:255'],
@@ -84,6 +85,7 @@ class LiturgyController extends Controller implements HasMiddleware
             'season' => $validated['season'] ?? null,
             'color' => $validated['color'] ?? null,
             'week' => $validated['week'] ?? null,
+            'meditation' => $validated['meditation'] ?? null,
             'readings' => $readings,
             'source' => 'manual', // protect from the automatic AELF sync
         ]);

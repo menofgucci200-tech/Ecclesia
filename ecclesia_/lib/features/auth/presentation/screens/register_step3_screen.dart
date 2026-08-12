@@ -6,9 +6,9 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimens.dart';
-import '../../../../core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/auth_step_scaffold.dart';
+import '../../../../core/widgets/message_card.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../router/app_routes.dart';
 import '../providers/register_controller.dart';
@@ -29,6 +29,7 @@ class _RegisterStep3ScreenState extends ConsumerState<RegisterStep3Screen> {
   final _confirmController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
+  ApiException? _error;
 
   @override
   void dispose() {
@@ -49,6 +50,7 @@ class _RegisterStep3ScreenState extends ConsumerState<RegisterStep3Screen> {
 
   Future<void> _submit() async {
     if (!_isValid) return;
+    if (_error != null) setState(() => _error = null);
 
     try {
       await ref.read(registerControllerProvider.notifier).submit(
@@ -59,7 +61,7 @@ class _RegisterStep3ScreenState extends ConsumerState<RegisterStep3Screen> {
       context.go(AppRoutes.welcomeUser);
     } on ApiException catch (error) {
       if (!mounted) return;
-      AppSnackBar.showError(context, error.message);
+      setState(() => _error = error);
     }
   }
 
@@ -72,6 +74,9 @@ class _RegisterStep3ScreenState extends ConsumerState<RegisterStep3Screen> {
       subtitle: 'Choisissez un mot de passe facile à retenir.',
       currentStep: 3,
       totalSteps: 3,
+      banner: _error == null
+          ? null
+          : MessageCard.fromException(_error!, onRetry: _submit),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

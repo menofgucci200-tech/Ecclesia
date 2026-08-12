@@ -17,6 +17,7 @@ class AuthStepScaffold extends StatelessWidget {
     required this.body,
     required this.bottom,
     this.subtitle,
+    this.banner,
     this.currentStep,
     this.totalSteps,
     this.showBack = true,
@@ -27,6 +28,10 @@ class AuthStepScaffold extends StatelessWidget {
 
   final String title;
   final String? subtitle;
+
+  /// Optional feedback shown between the subtitle and the form (e.g. a
+  /// [MessageCard] carrying an error or validation message).
+  final Widget? banner;
   final Widget body;
   final Widget bottom;
   final int? currentStep;
@@ -96,6 +101,10 @@ class AuthStepScaffold extends StatelessWidget {
                       if (subtitle != null) ...[
                         const SizedBox(height: AppDimens.md),
                         Text(subtitle!, style: theme.textTheme.bodyMedium),
+                      ],
+                      if (banner != null) ...[
+                        const SizedBox(height: AppDimens.xl),
+                        banner!,
                       ],
                       const SizedBox(height: AppDimens.xxl),
                       body,

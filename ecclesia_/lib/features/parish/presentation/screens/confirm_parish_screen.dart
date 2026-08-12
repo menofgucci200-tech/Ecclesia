@@ -135,8 +135,16 @@ class _ParishDetailCard extends StatelessWidget {
               Container(
                 height: 52,
                 width: 52,
+                clipBehavior: Clip.antiAlias,
                 decoration: const BoxDecoration(color: AppColors.navy, shape: BoxShape.circle),
-                child: const Icon(Icons.church_outlined, color: AppColors.white, size: 26),
+                child: parish.logoUrl != null
+                    ? Image.network(
+                        parish.logoUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) =>
+                            const Icon(Icons.church_outlined, color: AppColors.white, size: 26),
+                      )
+                    : const Icon(Icons.church_outlined, color: AppColors.white, size: 26),
               ),
               const SizedBox(width: AppDimens.md),
               Expanded(

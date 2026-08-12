@@ -53,6 +53,32 @@ class AelfService
     }
 
     /**
+     * Fetch the day's "informations" block (feast name, colour, liturgical day)
+     * used by the Saint-of-the-day module. Returns null on failure.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function fetchInformations(string $date, string $zone = 'afrique'): ?array
+    {
+        try {
+            $response = Http::acceptJson()
+                ->timeout(20)
+                ->retry(2, 500)
+                ->get(self::BASE_URL."/informations/{$date}/{$zone}");
+        } catch (\Throwable $e) {
+            Log::warning('AELF informations fetch failed', ['date' => $date, 'error' => $e->getMessage()]);
+
+            return null;
+        }
+
+        if (! $response->successful()) {
+            return null;
+        }
+
+        return $response->json('informations');
+    }
+
+    /**
      * @param  array<int, array<string, mixed>>  $lectures
      * @return list<array<string, mixed>>
      */

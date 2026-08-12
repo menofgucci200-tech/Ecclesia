@@ -29,7 +29,11 @@ class LiturgyResource extends JsonResource
             'gospel' => $gospel === null ? null : [
                 'ref' => $gospel['ref'] ?? null,
                 'title' => $gospel['title'] ?? null,
+                'intro' => $gospel['intro'] ?? null,
+                'content' => $gospel['content'] ?? null,
+                'verse' => $gospel['verse'] ?? null,
             ],
+            'meditation' => $this->meditation,
             'readings' => array_values($this->readings ?? []),
         ];
     }

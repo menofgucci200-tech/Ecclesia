@@ -70,22 +70,34 @@ class WelcomeUserScreen extends ConsumerWidget {
                     ],
                   ),
                   const Spacer(),
-                  RichText(
-                    text: TextSpan(
-                      style: const TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.white,
-                        height: 1.1,
-                      ),
-                      children: [
-                        const TextSpan(text: 'Bienvenue, '),
-                        TextSpan(
-                          text: firstName,
-                          style: const TextStyle(color: AppColors.gold),
+                  // Keep the greeting on a single line whatever the first name's
+                  // length: FittedBox shrinks the whole line to fit the width
+                  // instead of wrapping or overflowing.
+                  SizedBox(
+                    width: double.infinity,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: RichText(
+                        maxLines: 1,
+                        softWrap: false,
+                        text: TextSpan(
+                          style: const TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.white,
+                            height: 1.1,
+                          ),
+                          children: [
+                            const TextSpan(text: 'Bienvenue, '),
+                            TextSpan(
+                              text: firstName,
+                              style: const TextStyle(color: AppColors.gold),
+                            ),
+                            const TextSpan(text: ' !'),
+                          ],
                         ),
-                        const TextSpan(text: ' !'),
-                      ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: AppDimens.lg),

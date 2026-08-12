@@ -10,6 +10,7 @@ import '../../../../core/theme/app_dimens.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/auth_step_scaffold.dart';
+import '../../../../core/widgets/message_card.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../router/app_routes.dart';
 import '../providers/registration_draft_controller.dart';
@@ -30,6 +31,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
   bool _obscure = true;
+  ApiException? _error;
 
   @override
   void dispose() {
@@ -46,6 +48,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
 
   Future<void> _submit(String phone) async {
     if (!_isValid) return;
+    if (_error != null) setState(() => _error = null);
 
     try {
       await ref.read(resetPasswordControllerProvider.notifier).reset(
@@ -59,7 +62,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       context.go(AppRoutes.home);
     } on ApiException catch (error) {
       if (!mounted) return;
-      AppSnackBar.showError(context, error.message);
+      setState(() => _error = error);
     }
   }
 
@@ -73,6 +76,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       subtitle: widget.emailHint != null && widget.emailHint!.isNotEmpty
           ? 'Entrez le code envoyé à ${widget.emailHint} et choisissez un nouveau mot de passe.'
           : 'Entrez le code reçu par e-mail et choisissez un nouveau mot de passe.',
+      banner: _error == null
+          ? null
+          : MessageCard.fromException(_error!, onRetry: () => _submit(phone)),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
