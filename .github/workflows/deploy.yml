@@ -94,6 +94,7 @@ jobs:
             "cd ${{ secrets.DEPLOY_PATH }} && \
              php artisan migrate --force && \
              ([ -L public/storage ] || ln -sfn ../storage/app/public public/storage) || true && \
+             php artisan app:geocode-parishes || true && \
              php artisan optimize:clear && \
              php artisan config:cache && \
              php artisan route:cache && \
