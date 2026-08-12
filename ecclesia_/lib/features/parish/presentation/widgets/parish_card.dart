@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimens.dart';
@@ -35,7 +36,10 @@ class ParishCard extends StatelessWidget {
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(AppDimens.radiusLg),
         child: InkWell(
-          onTap: onTap,
+          onTap: () {
+            HapticFeedback.selectionClick();
+            onTap();
+          },
           borderRadius: BorderRadius.circular(AppDimens.radiusLg),
           child: Padding(
             padding: const EdgeInsets.all(AppDimens.lg),

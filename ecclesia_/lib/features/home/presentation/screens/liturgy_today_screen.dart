@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/widgets/error_state.dart';
+import '../../../../core/widgets/skeleton.dart';
 import '../providers/home_provider.dart';
 import '../theme/home_palette.dart';
 import 'liturgy_screen.dart';
@@ -18,16 +21,30 @@ class LiturgyTodayScreen extends ConsumerWidget {
     return async.when(
       loading: () => const Scaffold(
         backgroundColor: HomePalette.screenBg,
-        body: Center(child: CircularProgressIndicator(color: HomePalette.navy)),
+        body: Padding(
+          padding: EdgeInsets.all(20),
+          child: SkeletonParagraph(lines: 6),
+        ),
       ),
       error: (e, _) => Scaffold(
+        backgroundColor: HomePalette.screenBg,
         appBar: AppBar(backgroundColor: HomePalette.navy, foregroundColor: Colors.white),
-        body: Center(child: TextButton(onPressed: () => ref.invalidate(liturgyForDateProvider(key)), child: const Text('Réessayer'))),
+        body: Padding(
+          padding: const EdgeInsets.all(20),
+          child: ErrorState(
+            message: 'Liturgie indisponible.',
+            onRetry: () => ref.invalidate(liturgyForDateProvider(key)),
+          ),
+        ),
       ),
       data: (liturgy) => liturgy == null
           ? Scaffold(
+              backgroundColor: HomePalette.screenBg,
               appBar: AppBar(backgroundColor: HomePalette.navy, foregroundColor: Colors.white, title: const Text('Liturgie')),
-              body: const Center(child: Text('Liturgie indisponible.')),
+              body: const Padding(
+                padding: EdgeInsets.all(20),
+                child: EmptyState(message: 'Liturgie indisponible.', icon: Icons.menu_book_outlined),
+              ),
             )
           : LiturgyScreen(liturgy: liturgy),
     );

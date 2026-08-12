@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimens.dart';
+import '../../../../core/widgets/app_card.dart';
 import '../../../../router/app_routes.dart';
 import '../../../auth/presentation/providers/session_controller.dart';
 import 'preferences_screen.dart';
@@ -25,66 +27,69 @@ class ProfileScreen extends ConsumerWidget {
     final user = ref.watch(currentUserProvider);
     final theme = Theme.of(context);
 
+    final sections = <Widget>[
+      Center(
+        child: Column(
+          children: [
+            CircleAvatar(
+              radius: 40,
+              backgroundColor: AppColors.navy,
+              backgroundImage: user?.avatarUrl != null ? NetworkImage(user!.avatarUrl!) : null,
+              child: user?.avatarUrl == null
+                  ? Text(
+                      _initials(user?.firstName, user?.lastName),
+                      style: const TextStyle(color: AppColors.white, fontSize: 26, fontWeight: FontWeight.w700),
+                    )
+                  : null,
+            ),
+            const SizedBox(height: AppDimens.md),
+            Text(user?.fullName ?? '', style: theme.textTheme.titleLarge),
+            if (user?.phone != null) Text(user!.phone, style: theme.textTheme.bodyMedium),
+          ],
+        ),
+      ),
+      const SizedBox(height: AppDimens.xl),
+      if (user?.email != null) _InfoTile(icon: Icons.mail_outline, label: 'E-mail', value: user!.email!),
+      const SizedBox(height: AppDimens.sm),
+      Text('MA PAROISSE', style: theme.textTheme.labelMedium),
+      const SizedBox(height: AppDimens.sm),
+      _ParishSection(
+        name: user?.parish?.name,
+        location: user?.parish?.locationLine,
+        logoUrl: user?.parish?.logoUrl,
+        onChange: () => context.push(AppRoutes.chooseParish),
+      ),
+      const SizedBox(height: AppDimens.lg),
+      _ActionTile(
+        icon: Icons.edit_outlined,
+        label: 'Éditer mon profil',
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProfileEditScreen())),
+      ),
+      _ActionTile(
+        icon: Icons.tune,
+        label: 'Personnaliser l\'application',
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PreferencesScreen())),
+      ),
+      _ActionTile(
+        icon: Icons.lock_reset,
+        label: 'Changer mon mot de passe',
+        onTap: () => context.push(AppRoutes.changePassword),
+      ),
+      _ActionTile(
+        icon: Icons.logout,
+        label: 'Se déconnecter',
+        danger: true,
+        onTap: () => _logout(context, ref),
+      ),
+    ];
+
     return Scaffold(
       appBar: AppBar(title: const Text('Mon profil')),
       body: ListView(
         padding: const EdgeInsets.all(AppDimens.screenPadding),
         children: [
-          Center(
-            child: Column(
-              children: [
-                CircleAvatar(
-                  radius: 40,
-                  backgroundColor: AppColors.navy,
-                  backgroundImage: user?.avatarUrl != null ? NetworkImage(user!.avatarUrl!) : null,
-                  child: user?.avatarUrl == null
-                      ? Text(
-                          _initials(user?.firstName, user?.lastName),
-                          style: const TextStyle(color: AppColors.white, fontSize: 26, fontWeight: FontWeight.w700),
-                        )
-                      : null,
-                ),
-                const SizedBox(height: AppDimens.md),
-                Text(user?.fullName ?? '', style: theme.textTheme.titleLarge),
-                if (user?.phone != null)
-                  Text(user!.phone, style: theme.textTheme.bodyMedium),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppDimens.xl),
-          if (user?.email != null)
-            _InfoTile(icon: Icons.mail_outline, label: 'E-mail', value: user!.email!),
-          const SizedBox(height: AppDimens.sm),
-          Text('MA PAROISSE', style: theme.textTheme.labelMedium),
-          const SizedBox(height: AppDimens.sm),
-          _ParishSection(
-            name: user?.parish?.name,
-            location: user?.parish?.locationLine,
-            logoUrl: user?.parish?.logoUrl,
-            onChange: () => context.push(AppRoutes.chooseParish),
-          ),
-          const SizedBox(height: AppDimens.lg),
-          _ActionTile(
-            icon: Icons.edit_outlined,
-            label: 'Éditer mon profil',
-            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProfileEditScreen())),
-          ),
-          _ActionTile(
-            icon: Icons.tune,
-            label: 'Personnaliser l\'application',
-            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PreferencesScreen())),
-          ),
-          _ActionTile(
-            icon: Icons.lock_reset,
-            label: 'Changer mon mot de passe',
-            onTap: () => context.push(AppRoutes.changePassword),
-          ),
-          _ActionTile(
-            icon: Icons.logout,
-            label: 'Se déconnecter',
-            danger: true,
-            onTap: () => _logout(context, ref),
-          ),
+          for (var i = 0; i < sections.length; i++)
+            sections[i].animate().fadeIn(duration: 260.ms, delay: (i * 30).ms),
         ],
       ),
     );
@@ -113,12 +118,9 @@ class _ParishSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppDimens.lg),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceMuted,
-        borderRadius: BorderRadius.circular(AppDimens.radiusLg),
-      ),
+    return AppCard(
+      color: AppColors.surfaceMuted,
+      borderColor: Colors.transparent,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -190,13 +192,9 @@ class _InfoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppDimens.md),
-      padding: const EdgeInsets.all(AppDimens.lg),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceMuted,
-        borderRadius: BorderRadius.circular(AppDimens.radiusLg),
-      ),
+    return AppCard(
+      color: AppColors.surfaceMuted,
+      borderColor: Colors.transparent,
       child: Row(
         children: [
           Icon(icon, color: AppColors.navy, size: 22),
@@ -233,32 +231,20 @@ class _ActionTile extends StatelessWidget {
     final color = danger ? AppColors.error : AppColors.navy;
     return Padding(
       padding: const EdgeInsets.only(bottom: AppDimens.md),
-      child: Material(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(AppDimens.radiusLg),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppDimens.radiusLg),
-          child: Container(
-            padding: const EdgeInsets.all(AppDimens.lg),
-            decoration: BoxDecoration(
-              border: Border.all(color: AppColors.border),
-              borderRadius: BorderRadius.circular(AppDimens.radiusLg),
+      child: AppCard(
+        onTap: onTap,
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 22),
+            const SizedBox(width: AppDimens.md),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(fontWeight: FontWeight.w600, color: color),
+              ),
             ),
-            child: Row(
-              children: [
-                Icon(icon, color: color, size: 22),
-                const SizedBox(width: AppDimens.md),
-                Expanded(
-                  child: Text(
-                    label,
-                    style: TextStyle(fontWeight: FontWeight.w600, color: color),
-                  ),
-                ),
-                const Icon(Icons.chevron_right, color: AppColors.textHint),
-              ],
-            ),
-          ),
+            const Icon(Icons.chevron_right, color: AppColors.textHint),
+          ],
         ),
       ),
     );

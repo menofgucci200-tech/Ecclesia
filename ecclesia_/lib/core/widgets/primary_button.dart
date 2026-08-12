@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_dimens.dart';
@@ -32,7 +33,12 @@ class PrimaryButton extends StatelessWidget {
         variant == PrimaryButtonVariant.gold ? AppColors.gold : AppColors.navy;
 
     return ElevatedButton(
-      onPressed: interactive ? onPressed : null,
+      onPressed: interactive
+          ? () {
+              HapticFeedback.lightImpact();
+              onPressed!();
+            }
+          : null,
       style: ElevatedButton.styleFrom(
         backgroundColor: background,
         foregroundColor: AppColors.white,

@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/widgets/error_state.dart';
+import '../../../../core/widgets/offline_banner.dart';
+import '../../../../core/widgets/skeleton.dart';
 import '../../../../router/app_routes.dart';
 import '../../../announcement/data/models/announcement_model.dart';
 import '../../../announcement/presentation/announcement_visuals.dart';
@@ -11,8 +16,6 @@ import '../../../announcement/presentation/providers/parish_feed_provider.dart';
 import '../../../auth/presentation/providers/session_controller.dart';
 import '../../../donations/data/campaign.dart';
 import '../../../donations/presentation/campaign_providers.dart';
-import '../../../donations/presentation/donations_screen.dart';
-import '../../../life/presentation/screens/life_faith_screen.dart';
 import '../../../movements/data/models/movement.dart';
 import '../../../movements/presentation/providers/movements_provider.dart';
 import '../../../payments/presentation/payments_hub_screen.dart';
@@ -25,6 +28,7 @@ import '../theme/home_palette.dart';
 import '../theme/liturgical_colors.dart';
 import '../widgets/agenda_view.dart';
 import '../widgets/home_bottom_nav.dart';
+import '../widgets/home_end_drawer.dart';
 import '../widgets/home_sections.dart';
 import '../widgets/liturgy_today_card.dart';
 import '../widgets/parish_post_card.dart';
@@ -40,6 +44,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
   int _tab = 0;
 
   void _comingSoon([String? label]) {
@@ -54,12 +59,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _onTab(int index) {
-    if (index == _tab) return;
-    // Profil already exists as its own screen; the rest are placeholders.
+    // "Menu" (index 4) is an action button, not a persistent tab: it opens
+    // the end drawer and never becomes the active tab.
     if (index == 4) {
-      context.push(AppRoutes.profile);
+      HapticFeedback.selectionClick();
+      _scaffoldKey.currentState?.openEndDrawer();
       return;
     }
+    if (index == _tab) return;
+    HapticFeedback.selectionClick();
     setState(() => _tab = index);
   }
 
@@ -71,7 +79,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light.copyWith(statusBarColor: Colors.transparent),
       child: Scaffold(
+        key: _scaffoldKey,
         backgroundColor: HomePalette.screenBg,
+        endDrawer: const HomeEndDrawer(),
         body: Column(
           children: [
             _HomeAppBar(
@@ -84,10 +94,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               onBack: () => context.go(AppRoutes.welcomeUser),
               onNotif: () => _comingSoon('Notifications'),
             ),
+            const OfflineBanner(),
             Expanded(
               child: switch (_tab) {
-                0 => _HomeFeed(onComingSoon: _comingSoon),
-                1 => const LifeFaithScreen(),
+                0 => _HomeFeed(
+                    onComingSoon: _comingSoon,
+                    onSeeMovements: () => setState(() => _tab = 1),
+                    onSeePaiements: () => setState(() => _tab = 2),
+                  ),
+                1 => const MovementsScreen(),
                 2 => const PaymentsHubScreen(),
                 3 => AgendaView(seasonColor: season.primary),
                 _ => _TabPlaceholder(index: _tab),
@@ -268,17 +283,21 @@ Widget _eventCardFrom(AgendaEvent e) {
 }
 
 class _HomeFeed extends ConsumerWidget {
-  const _HomeFeed({required this.onComingSoon});
+  const _HomeFeed({required this.onComingSoon, required this.onSeeMovements, required this.onSeePaiements});
 
   final void Function([String?]) onComingSoon;
+  final VoidCallback onSeeMovements;
+  final VoidCallback onSeePaiements;
 
   static const EdgeInsets _hpad = EdgeInsets.symmetric(horizontal: 18);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final feedAsync = ref.watch(parishFeedProvider);
-    final home = ref.watch(homeProvider).asData?.value;
-    final myMovements = ref.watch(myMovementsProvider).asData?.value ?? const <Movement>[];
+    final homeAsync = ref.watch(homeProvider);
+    final home = homeAsync.asData?.value;
+    final myMovementsAsync = ref.watch(myMovementsProvider);
+    final myMovements = myMovementsAsync.asData?.value ?? const <Movement>[];
     final user = ref.watch(currentUserProvider);
     final hidden = user?.hiddenSections ?? const <String>[];
     final movementsFirst = user?.feedPriority == 'movements';
@@ -291,11 +310,23 @@ class _HomeFeed extends ConsumerWidget {
         padding: _hpad,
         child: SectionHeader(
           title: 'Mes activités',
-          onSeeAll: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MovementsScreen())),
+          onSeeAll: onSeeMovements,
         ),
       ),
       const SizedBox(height: 12),
-      if (myMovements.isEmpty)
+      if (myMovementsAsync.isLoading)
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: _hpad,
+          child: Row(
+            children: const [
+              SkeletonBox(width: 180, height: 64, radius: 16),
+              SizedBox(width: 12),
+              SkeletonBox(width: 180, height: 64, radius: 16),
+            ],
+          ),
+        )
+      else if (myMovements.isEmpty)
         Padding(
           padding: _hpad,
           child: Text('Rejoignez un mouvement dans « Vie & Foi » pour le retrouver ici.',
@@ -329,15 +360,17 @@ class _HomeFeed extends ConsumerWidget {
           if (!hidden.contains('liturgy'))
             Padding(
               padding: _hpad,
-              child: LiturgyTodayCard(
-                liturgy: home?.liturgy,
-                nextMass: home?.nextMass,
-                onSeeLiturgy: home?.liturgy == null
-                    ? () => onComingSoon('Liturgie du jour')
-                    : () => Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => LiturgyScreen(liturgy: home!.liturgy!)),
-                        ),
-              ),
+              child: homeAsync.isLoading
+                  ? const SkeletonBox(width: double.infinity, height: 180, radius: 20)
+                  : LiturgyTodayCard(
+                      liturgy: home?.liturgy,
+                      nextMass: home?.nextMass,
+                      onSeeLiturgy: home?.liturgy == null
+                          ? () => onComingSoon('Liturgie du jour')
+                          : () => Navigator.of(context).push(
+                                MaterialPageRoute(builder: (_) => LiturgyScreen(liturgy: home!.liturgy!)),
+                              ),
+                    ),
             ),
           // "Mes activités" first when the user prioritises their movements.
           if (movementsFirst && !hidden.contains('activities')) ...activitiesBlock,
@@ -352,7 +385,21 @@ class _HomeFeed extends ConsumerWidget {
               child: SectionHeader(title: 'Événements à venir', onSeeAll: () => onComingSoon('Événements')),
             ),
             const SizedBox(height: 12),
-            if ((home?.events ?? const []).isEmpty)
+            if (homeAsync.isLoading)
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: _hpad,
+                child: Row(
+                  children: const [
+                    SkeletonBox(width: 150, height: 110, radius: 16),
+                    SizedBox(width: 12),
+                    SkeletonBox(width: 150, height: 110, radius: 16),
+                    SizedBox(width: 12),
+                    SkeletonBox(width: 150, height: 110, radius: 16),
+                  ],
+                ),
+              )
+            else if ((home?.events ?? const []).isEmpty)
               Padding(
                 padding: _hpad,
                 child: Text('Aucun événement à venir pour le moment.',
@@ -382,7 +429,7 @@ class _HomeFeed extends ConsumerWidget {
               padding: _hpad,
               child: SectionHeader(
                 title: 'Dons & collectes',
-                onSeeAll: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DonationsScreen())),
+                onSeeAll: onSeePaiements,
               ),
             ),
             const SizedBox(height: 12),
@@ -403,14 +450,14 @@ class _HomeFeed extends ConsumerWidget {
       loading: () => const [
         Padding(padding: _hpad, child: SectionHeader(title: 'Fil paroissial')),
         SizedBox(height: 12),
-        Padding(padding: _hpad, child: _FeedLoader()),
+        Padding(padding: _hpad, child: SkeletonFeedCard()),
       ],
       error: (error, _) => [
         const Padding(padding: _hpad, child: SectionHeader(title: 'Fil paroissial')),
         const SizedBox(height: 12),
         Padding(
           padding: _hpad,
-          child: _FeedError(
+          child: ErrorState(
             message: error is ApiException ? error.message : 'Impossible de charger le fil paroissial.',
             onRetry: () => ref.invalidate(parishFeedProvider),
           ),
@@ -451,7 +498,10 @@ class _HomeFeed extends ConsumerWidget {
           ..add(const SizedBox(height: 12));
 
         if (posts.isEmpty) {
-          children.add(const Padding(padding: _hpad, child: _FeedEmpty()));
+          children.add(const Padding(
+            padding: _hpad,
+            child: EmptyState(message: 'Aucune annonce pour le moment.', icon: Icons.forum_outlined),
+          ));
         } else {
           for (var i = 0; i < posts.length; i++) {
             final post = posts[i];
@@ -473,7 +523,10 @@ class _HomeFeed extends ConsumerWidget {
                 initialLikeCount: post.likesCount,
                 commentCount: post.commentsCount,
                 onShare: () => onComingSoon('Partager'),
-              ),
+              )
+                  .animate()
+                  .fadeIn(duration: 320.ms, delay: (i * 60).ms)
+                  .slideY(begin: .06, end: 0, duration: 320.ms, delay: (i * 60).ms, curve: Curves.easeOutCubic),
             ));
             if (i < posts.length - 1) {
               children.add(const SizedBox(height: 14));
@@ -487,92 +540,12 @@ class _HomeFeed extends ConsumerWidget {
   }
 }
 
-class _FeedLoader extends StatelessWidget {
-  const _FeedLoader();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 28),
-      child: Center(child: CircularProgressIndicator(color: HomePalette.navy)),
-    );
-  }
-}
-
-class _FeedError extends StatelessWidget {
-  const _FeedError({required this.message, required this.onRetry});
-
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: HomePalette.cardBg,
-        border: Border.all(color: HomePalette.cardBorder),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        children: [
-          const Icon(Icons.wifi_off_rounded, color: HomePalette.textMuted, size: 30),
-          const SizedBox(height: 10),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 13, color: HomePalette.textAuthor),
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton(
-            onPressed: onRetry,
-            style: OutlinedButton.styleFrom(
-              foregroundColor: HomePalette.navy,
-              side: const BorderSide(color: HomePalette.navy),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            child: const Text('Réessayer', style: TextStyle(fontWeight: FontWeight.w600)),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FeedEmpty extends StatelessWidget {
-  const _FeedEmpty();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 18),
-      decoration: BoxDecoration(
-        color: HomePalette.cardBg,
-        border: Border.all(color: HomePalette.cardBorder),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: const Column(
-        children: [
-          Icon(Icons.forum_outlined, color: HomePalette.textMuted, size: 30),
-          SizedBox(height: 10),
-          Text(
-            'Aucune annonce pour le moment.',
-            style: TextStyle(fontSize: 13, color: HomePalette.textAuthor),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _TabPlaceholder extends StatelessWidget {
   const _TabPlaceholder({required this.index});
 
   final int index;
 
-  static const List<String> _titles = ['Accueil', 'Vie & Foi', 'Paiements', 'Agenda', 'Profil'];
+  static const List<String> _titles = ['Accueil', 'Mouvements', 'Paiements', 'Agenda', 'Menu'];
 
   @override
   Widget build(BuildContext context) {

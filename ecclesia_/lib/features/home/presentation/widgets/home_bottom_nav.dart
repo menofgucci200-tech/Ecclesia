@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../theme/home_palette.dart';
 
-/// The 5-tab bottom navigation bar from the mockup: Accueil · Vie & Foi ·
-/// Paiements · Agenda · Profil. Purely presentational — the parent owns the
-/// selected index.
+/// The 5-tab bottom navigation bar: Accueil · Mouvements · Paiements ·
+/// Agenda · Menu. Purely presentational — the parent owns the selected
+/// index. "Menu" (index 4) is an action button that opens the end drawer;
+/// it never becomes the active tab.
 class HomeBottomNav extends StatelessWidget {
   const HomeBottomNav({
     super.key,
@@ -18,16 +19,16 @@ class HomeBottomNav extends StatelessWidget {
   final ValueChanged<int> onTap;
   final Color activeColor;
 
-  /// When set, the "Profil" tab shows the faithful's photo instead of a
-  /// generic person icon.
+  /// When set, the "Menu" tab shows the faithful's photo instead of a
+  /// generic icon.
   final String? avatarUrl;
 
   static const List<(IconData, String)> _items = [
     (Icons.home_outlined, 'Accueil'),
-    (Icons.add, 'Vie & Foi'),
-    (Icons.credit_card, 'Paiements'),
+    (Icons.groups_outlined, 'Mouvements'),
+    (Icons.credit_card_outlined, 'Paiements'),
     (Icons.calendar_today_outlined, 'Agenda'),
-    (Icons.person_outline, 'Profil'),
+    (Icons.menu_outlined, 'Menu'),
   ];
 
   @override
@@ -58,7 +59,7 @@ class HomeBottomNav extends StatelessWidget {
                     label: _items[i].$2,
                     active: i == currentIndex,
                     activeColor: activeColor,
-                    // The last tab (Profil) shows the user's avatar when set.
+                    // The last tab (Menu) shows the user's avatar when set.
                     avatarUrl: i == _items.length - 1 ? avatarUrl : null,
                     onTap: () => onTap(i),
                   ),
@@ -95,12 +96,16 @@ class _NavItem extends StatelessWidget {
             child: Stack(
               alignment: Alignment.center,
               children: [
-                if (active && avatarUrl == null)
-                  Positioned.fill(
+                Positioned.fill(
+                  child: AnimatedOpacity(
+                    opacity: active && avatarUrl == null ? 1 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeOut,
                     child: DecoratedBox(
                       decoration: BoxDecoration(color: activeColor.withValues(alpha: .12), borderRadius: const BorderRadius.all(Radius.circular(100))),
                     ),
                   ),
+                ),
                 if (avatarUrl != null)
                   Container(
                     width: 24,
@@ -117,14 +122,24 @@ class _NavItem extends StatelessWidget {
                     ),
                   )
                 else
-                  Icon(icon, size: 20, color: color),
+                  AnimatedScale(
+                    scale: active ? 1.08 : 1,
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeOut,
+                    child: TweenAnimationBuilder<Color?>(
+                      tween: ColorTween(end: color),
+                      duration: const Duration(milliseconds: 200),
+                      builder: (context, animatedColor, _) => Icon(icon, size: 20, color: animatedColor),
+                    ),
+                  ),
               ],
             ),
           ),
           const SizedBox(height: 3),
-          Text(
-            label,
+          AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 200),
             style: TextStyle(fontSize: 9.5, color: color, fontWeight: active ? FontWeight.w700 : FontWeight.w400),
+            child: Text(label),
           ),
         ],
       ),

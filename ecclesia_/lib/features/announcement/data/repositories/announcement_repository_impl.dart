@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/dio_client.dart';
+import '../../../../core/storage/cache_service.dart';
 import '../../domain/repositories/announcement_repository.dart';
 import '../datasources/announcement_remote_data_source.dart';
 import '../models/announcement_model.dart';
@@ -16,7 +17,7 @@ class AnnouncementRepositoryImpl implements AnnouncementRepository {
 }
 
 final announcementRemoteDataSourceProvider = Provider<AnnouncementRemoteDataSource>((ref) {
-  return AnnouncementRemoteDataSource(ref.read(dioProvider));
+  return AnnouncementRemoteDataSource(ref.read(dioProvider), ref.read(cacheServiceProvider));
 });
 
 final announcementRepositoryProvider = Provider<AnnouncementRepository>((ref) {

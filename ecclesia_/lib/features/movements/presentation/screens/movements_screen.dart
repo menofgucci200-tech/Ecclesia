@@ -1,12 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/network/api_exception.dart';
+import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/widgets/error_state.dart';
+import '../../../../core/widgets/skeleton.dart';
 import '../../../home/presentation/theme/home_palette.dart';
 import '../../data/models/movement.dart';
 import '../providers/movements_provider.dart';
 import 'movement_detail_screen.dart';
 
-/// Lists the parish movements; the faithful joins the ones they belong to.
+/// The "Mouvements" tab content: header + the parish movements, the
+/// faithful joins the ones they belong to. Embedded under the home
+/// dashboard's own app bar — no `Scaffold`/`AppBar` of its own. The header
+/// stays put across loading/error/data so it never pops in.
 class MovementsScreen extends ConsumerWidget {
   const MovementsScreen({super.key});
 
@@ -14,35 +23,41 @@ class MovementsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(parishMovementsProvider);
 
-    return Scaffold(
-      backgroundColor: HomePalette.screenBg,
-      appBar: AppBar(
-        backgroundColor: HomePalette.navy,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        title: const Text('Mouvements', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17)),
-      ),
-      body: async.when(
-        loading: () => const Center(child: CircularProgressIndicator(color: HomePalette.navy)),
-        error: (e, _) => _Message(
-          text: 'Impossible de charger les mouvements.',
-          onRetry: () => ref.invalidate(parishMovementsProvider),
-        ),
-        data: (movements) {
-          if (movements.isEmpty) {
-            return const _Message(text: 'Aucun mouvement dans votre paroisse pour l\'instant.');
-          }
-          return RefreshIndicator(
-            color: HomePalette.navy,
-            onRefresh: () async => ref.invalidate(parishMovementsProvider),
-            child: ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: movements.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (context, i) => _MovementCard(movement: movements[i]),
+    return Container(
+      color: HomePalette.screenBg,
+      child: RefreshIndicator(
+        color: HomePalette.navy,
+        onRefresh: () async => ref.invalidate(parishMovementsProvider),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 18, 16, 30),
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            const Text('Mouvements', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: HomePalette.navy)),
+            const SizedBox(height: 4),
+            const Text('Vos communautés et engagements paroissiaux.', style: TextStyle(fontSize: 14, color: HomePalette.textBody)),
+            const SizedBox(height: 18),
+            async.when(
+              loading: () => const SkeletonList(),
+              error: (e, _) => ErrorState(
+                message: e is ApiException ? e.message : 'Impossible de charger les mouvements.',
+                onRetry: () => ref.invalidate(parishMovementsProvider),
+              ),
+              data: (movements) => movements.isEmpty
+                  ? const EmptyState(message: 'Aucun mouvement dans votre paroisse pour l\'instant.', icon: Icons.groups_outlined)
+                  : Column(
+                      children: [
+                        for (var i = 0; i < movements.length; i++) ...[
+                          _MovementCard(movement: movements[i])
+                              .animate()
+                              .fadeIn(duration: 300.ms, delay: (i * 50).ms)
+                              .slideY(begin: .06, end: 0, duration: 300.ms, delay: (i * 50).ms, curve: Curves.easeOutCubic),
+                          const SizedBox(height: 12),
+                        ],
+                      ],
+                    ),
             ),
-          );
-        },
+          ],
+        ),
       ),
     );
   }
@@ -70,6 +85,7 @@ class _MovementCardState extends ConsumerState<_MovementCard> {
       } else {
         await ds.join(widget.movement.id);
       }
+      HapticFeedback.lightImpact();
       if (mounted) setState(() => _isMember = !_isMember);
       ref.invalidate(myMovementsProvider);
       ref.invalidate(parishMovementsProvider);
@@ -145,23 +161,3 @@ class _MovementCardState extends ConsumerState<_MovementCard> {
   }
 }
 
-class _Message extends StatelessWidget {
-  const _Message({required this.text, this.onRetry});
-  final String text;
-  final VoidCallback? onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.groups_outlined, size: 44, color: HomePalette.textFaint),
-          const SizedBox(height: 12),
-          Padding(padding: const EdgeInsets.symmetric(horizontal: 40), child: Text(text, textAlign: TextAlign.center, style: const TextStyle(color: HomePalette.textBody))),
-          if (onRetry != null) ...[const SizedBox(height: 12), TextButton(onPressed: onRetry, child: const Text('Réessayer'))],
-        ],
-      ),
-    );
-  }
-}

@@ -26,14 +26,17 @@ class AppSnackBar {
       ..showSnackBar(
         SnackBar(
           backgroundColor: color,
+          shape: const StadiumBorder(),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           content: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Icon(icon, color: AppColors.white, size: 20),
               const SizedBox(width: 12),
-              Expanded(
+              Flexible(
                 child: Text(
                   message,
-                  style: const TextStyle(color: AppColors.white),
+                  style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.w600),
                 ),
               ),
             ],

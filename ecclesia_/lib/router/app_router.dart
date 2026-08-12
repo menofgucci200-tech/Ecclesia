@@ -17,6 +17,7 @@ import '../features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../features/parish/presentation/screens/choose_parish_screen.dart';
 import '../features/parish/presentation/screens/confirm_parish_screen.dart';
 import '../features/profile/presentation/screens/profile_screen.dart';
+import 'app_page_transition.dart';
 import 'app_routes.dart';
 import 'router_refresh_notifier.dart';
 import 'splash_screen.dart';
@@ -43,46 +44,52 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     refreshListenable: refreshNotifier,
     redirect: (context, state) => _redirect(ref, state),
     routes: [
-      GoRoute(path: AppRoutes.splash, builder: (_, _) => const SplashScreen()),
-      GoRoute(path: AppRoutes.onboarding, builder: (_, _) => const OnboardingScreen()),
-      GoRoute(path: AppRoutes.phone, builder: (_, _) => const PhoneEntryScreen()),
-      GoRoute(path: AppRoutes.login, builder: (_, _) => const LoginScreen()),
+      GoRoute(path: AppRoutes.splash, pageBuilder: (_, state) => fadeSlidePage(state, const SplashScreen())),
+      GoRoute(path: AppRoutes.onboarding, pageBuilder: (_, state) => fadeSlidePage(state, const OnboardingScreen())),
+      GoRoute(path: AppRoutes.phone, pageBuilder: (_, state) => fadeSlidePage(state, const PhoneEntryScreen())),
+      GoRoute(path: AppRoutes.login, pageBuilder: (_, state) => fadeSlidePage(state, const LoginScreen())),
       GoRoute(
         path: AppRoutes.forgotPassword,
-        builder: (_, _) => const ForgotPasswordScreen(),
+        pageBuilder: (_, state) => fadeSlidePage(state, const ForgotPasswordScreen()),
       ),
       GoRoute(
         path: AppRoutes.resetPassword,
-        builder: (context, state) =>
-            ResetPasswordScreen(emailHint: state.extra as String?),
+        pageBuilder: (_, state) =>
+            fadeSlidePage(state, ResetPasswordScreen(emailHint: state.extra as String?)),
       ),
       GoRoute(
         path: AppRoutes.registerIntro,
-        builder: (_, _) => const RegistrationIntroScreen(),
+        pageBuilder: (_, state) => fadeSlidePage(state, const RegistrationIntroScreen()),
       ),
       GoRoute(
         path: AppRoutes.registerStep1,
-        builder: (_, _) => const RegisterStep1Screen(),
+        pageBuilder: (_, state) => fadeSlidePage(state, const RegisterStep1Screen()),
       ),
       GoRoute(
         path: AppRoutes.registerStep2,
-        builder: (_, _) => const RegisterStep2Screen(),
+        pageBuilder: (_, state) => fadeSlidePage(state, const RegisterStep2Screen()),
       ),
       GoRoute(
         path: AppRoutes.registerStep3,
-        builder: (_, _) => const RegisterStep3Screen(),
+        pageBuilder: (_, state) => fadeSlidePage(state, const RegisterStep3Screen()),
       ),
-      GoRoute(path: AppRoutes.welcomeUser, builder: (_, _) => const WelcomeUserScreen()),
-      GoRoute(path: AppRoutes.chooseParish, builder: (_, _) => const ChooseParishScreen()),
+      GoRoute(
+        path: AppRoutes.welcomeUser,
+        pageBuilder: (_, state) => fadeSlidePage(state, const WelcomeUserScreen()),
+      ),
+      GoRoute(
+        path: AppRoutes.chooseParish,
+        pageBuilder: (_, state) => fadeSlidePage(state, const ChooseParishScreen()),
+      ),
       GoRoute(
         path: AppRoutes.confirmParish,
-        builder: (context, state) => ConfirmParishScreen(parishId: state.extra as int),
+        pageBuilder: (_, state) => fadeSlidePage(state, ConfirmParishScreen(parishId: state.extra as int)),
       ),
-      GoRoute(path: AppRoutes.home, builder: (_, _) => const HomeScreen()),
-      GoRoute(path: AppRoutes.profile, builder: (_, _) => const ProfileScreen()),
+      GoRoute(path: AppRoutes.home, pageBuilder: (_, state) => fadeSlidePage(state, const HomeScreen())),
+      GoRoute(path: AppRoutes.profile, pageBuilder: (_, state) => fadeSlidePage(state, const ProfileScreen())),
       GoRoute(
         path: AppRoutes.changePassword,
-        builder: (_, _) => const ChangePasswordScreen(),
+        pageBuilder: (_, state) => fadeSlidePage(state, const ChangePasswordScreen()),
       ),
     ],
   );
