@@ -44,6 +44,7 @@ class Parish extends Model
         'cinetpay_api_key',
         'cinetpay_secret_key',
         'mass_offering_amount',
+        'quete_amount',
     ];
 
     /**
@@ -69,6 +70,7 @@ class Parish extends Model
             'cinetpay_api_key' => 'encrypted',
             'cinetpay_secret_key' => 'encrypted',
             'mass_offering_amount' => 'integer',
+            'quete_amount' => 'integer',
             'latitude' => 'decimal:7',
             'longitude' => 'decimal:7',
             'is_partner' => 'boolean',
@@ -86,10 +88,16 @@ class Parish extends Model
         return filled($this->cinetpay_site_id) && filled($this->cinetpay_api_key);
     }
 
-    /** Default mass-offering amount (XOF); 3000 for most parishes. */
-    public function massOfferingAmount(): int
+    /** Fixed mass-offering amount (XOF) set by the parish, if any. Null means free entry. */
+    public function massOfferingAmount(): ?int
     {
-        return $this->mass_offering_amount ?: 3000;
+        return $this->mass_offering_amount;
+    }
+
+    /** Fixed quête amount (XOF) set by the parish, if any. Null means free entry. */
+    public function queteAmount(): ?int
+    {
+        return $this->quete_amount;
     }
 
     /**

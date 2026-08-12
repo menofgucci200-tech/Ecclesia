@@ -25,6 +25,7 @@ class PaymentDataSource {
     String? intentionType,
     String? intention,
     String? date,
+    String? title,
   }) async {
     try {
       final res = await _dio.post<Map<String, dynamic>>('/payments', data: {
@@ -34,6 +35,7 @@ class PaymentDataSource {
         if (intentionType != null) 'intention_type': intentionType,
         if (intention != null && intention.isNotEmpty) 'intention': intention,
         if (date != null) 'date': date,
+        if (title != null && title.isNotEmpty) 'title': title,
       });
       return PaymentInit(
         reference: res.data!['reference'] as String,

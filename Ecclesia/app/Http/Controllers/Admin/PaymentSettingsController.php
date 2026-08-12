@@ -32,9 +32,11 @@ class PaymentSettingsController extends Controller
             'cinetpay_api_key' => ['nullable', 'string', 'max:2000'],
             'cinetpay_secret_key' => ['nullable', 'string', 'max:2000'],
             'mass_offering_amount' => ['nullable', 'integer', 'min:0', 'max:100000000'],
+            'quete_amount' => ['nullable', 'integer', 'min:0', 'max:100000000'],
         ]);
 
         $parish->mass_offering_amount = $data['mass_offering_amount'] ?? null;
+        $parish->quete_amount = $data['quete_amount'] ?? null;
 
         // Site ID isn't secret: it is prefilled, so save it as-is (blank clears
         // and disables payments). API/secret keys are write-only: a blank field

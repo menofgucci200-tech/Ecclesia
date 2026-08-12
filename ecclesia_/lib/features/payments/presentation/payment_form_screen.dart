@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -10,7 +11,8 @@ import '../data/payment_providers.dart';
 import 'payment_status_screen.dart';
 
 /// A functional payment form for one payment type. Collects the amount (and,
-/// for mass requests, the intention), then opens the CinetPay checkout.
+/// for mass requests, the intention — or, for "Autre", a title/motif), then
+/// opens the CinetPay checkout.
 class PaymentFormScreen extends ConsumerStatefulWidget {
   const PaymentFormScreen({super.key, required this.option, required this.options});
 
@@ -25,9 +27,12 @@ class _PaymentFormScreenState extends ConsumerState<PaymentFormScreen> {
   final _amountController = TextEditingController();
   final _intentionController = TextEditingController();
   final _noteController = TextEditingController();
+  final _titleController = TextEditingController();
   String? _intentionType;
   DateTime? _massDate;
   bool _submitting = false;
+
+  bool get _hasDateField => !widget.option.isAutre;
 
   @override
   void initState() {
@@ -35,9 +40,10 @@ class _PaymentFormScreenState extends ConsumerState<PaymentFormScreen> {
     _intentionType = widget.options.massIntentionTypes.isNotEmpty
         ? widget.options.massIntentionTypes.first.value
         : null;
-    // Prefill the default amount (e.g. 3000 F for a mass request).
-    if (widget.option.defaultAmount != null) {
-      _amountController.text = '${widget.option.defaultAmount}';
+    // A parish-fixed amount is prefilled and locked; otherwise the field
+    // starts empty so the faithful enters whatever they want.
+    if (widget.option.fixedAmount != null) {
+      _amountController.text = '${widget.option.fixedAmount}';
     }
   }
 
@@ -46,6 +52,7 @@ class _PaymentFormScreenState extends ConsumerState<PaymentFormScreen> {
     _amountController.dispose();
     _intentionController.dispose();
     _noteController.dispose();
+    _titleController.dispose();
     super.dispose();
   }
 
@@ -72,6 +79,10 @@ class _PaymentFormScreenState extends ConsumerState<PaymentFormScreen> {
       _error('Veuillez préciser l\'intention de la messe.');
       return;
     }
+    if (widget.option.isAutre && _titleController.text.trim().isEmpty) {
+      _error('Veuillez préciser le motif du paiement.');
+      return;
+    }
 
     setState(() => _submitting = true);
     try {
@@ -81,7 +92,8 @@ class _PaymentFormScreenState extends ConsumerState<PaymentFormScreen> {
             note: _noteController.text.trim(),
             intentionType: widget.option.isMassRequest ? _intentionType : null,
             intention: widget.option.isMassRequest ? _intentionController.text.trim() : null,
-            date: _massDate != null
+            title: widget.option.isAutre ? _titleController.text.trim() : null,
+            date: (_hasDateField && _massDate != null)
                 ? '${_massDate!.year.toString().padLeft(4, '0')}-${_massDate!.month.toString().padLeft(2, '0')}-${_massDate!.day.toString().padLeft(2, '0')}'
                 : null,
           );
@@ -113,6 +125,7 @@ class _PaymentFormScreenState extends ConsumerState<PaymentFormScreen> {
   Widget build(BuildContext context) {
     final option = widget.option;
     final amount = int.tryParse(_amountController.text.trim()) ?? 0;
+    final locked = option.amountLocked;
 
     return Scaffold(
       backgroundColor: HomePalette.screenBg,
@@ -125,11 +138,27 @@ class _PaymentFormScreenState extends ConsumerState<PaymentFormScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(18, 18, 18, 120),
         children: [
-          Text(option.description, style: const TextStyle(fontSize: 14, color: HomePalette.textBody, height: 1.5)),
+          Text(option.description, style: const TextStyle(fontSize: 14, color: HomePalette.textBody, height: 1.5))
+              .animate()
+              .fadeIn(duration: 260.ms),
           const SizedBox(height: 20),
 
+          if (option.isAutre) ...[
+            _label('Motif du paiement')
+                .animate()
+                .fadeIn(duration: 260.ms, delay: 40.ms),
+            _card(
+              child: TextField(
+                controller: _titleController,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(border: InputBorder.none, hintText: 'Ex. Réparation toiture, cierge…'),
+              ),
+            ).animate().fadeIn(duration: 260.ms, delay: 40.ms).slideY(begin: .04, end: 0, duration: 260.ms, delay: 40.ms, curve: Curves.easeOutCubic),
+            const SizedBox(height: 16),
+          ],
+
           if (option.isMassRequest) ...[
-            _label('Type d\'intention'),
+            _label('Type d\'intention').animate().fadeIn(duration: 260.ms, delay: 40.ms),
             _card(
               child: DropdownButtonFormField<String>(
                 initialValue: _intentionType,
@@ -140,83 +169,120 @@ class _PaymentFormScreenState extends ConsumerState<PaymentFormScreen> {
                     .toList(),
                 onChanged: (v) => setState(() => _intentionType = v),
               ),
-            ),
+            ).animate().fadeIn(duration: 260.ms, delay: 40.ms).slideY(begin: .04, end: 0, duration: 260.ms, delay: 40.ms, curve: Curves.easeOutCubic),
             const SizedBox(height: 16),
-            _label('Intention (pour qui / quoi)'),
+            _label('Intention (pour qui / quoi)').animate().fadeIn(duration: 260.ms, delay: 80.ms),
             _card(
               child: TextField(
                 controller: _intentionController,
                 maxLines: 2,
                 decoration: const InputDecoration(border: InputBorder.none, hintText: 'Ex. Repos de l\'âme de…'),
               ),
-            ),
+            ).animate().fadeIn(duration: 260.ms, delay: 80.ms).slideY(begin: .04, end: 0, duration: 260.ms, delay: 80.ms, curve: Curves.easeOutCubic),
             const SizedBox(height: 16),
           ],
 
-          // Optional date — available for every payment type (mass date, the
-          // Sunday of a quête, a célébration…).
-          _label(option.dateLabel),
-          InkWell(
-            onTap: _pickDate,
-            borderRadius: BorderRadius.circular(14),
-            child: _card(
-              child: Row(
-                children: [
-                  const Icon(Icons.event_outlined, size: 20, color: HomePalette.navy),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      _massDate == null
-                          ? 'Choisir une date'
-                          : '${_massDate!.day.toString().padLeft(2, '0')}/${_massDate!.month.toString().padLeft(2, '0')}/${_massDate!.year}',
-                      style: TextStyle(color: _massDate == null ? HomePalette.textMuted : HomePalette.navy, fontWeight: FontWeight.w600),
+          // Optional date — every type except "Autre" (mass date, the Sunday
+          // of a quête, a célébration…).
+          if (_hasDateField) ...[
+            _label(option.dateLabel).animate().fadeIn(duration: 260.ms, delay: 100.ms),
+            InkWell(
+              onTap: _pickDate,
+              borderRadius: BorderRadius.circular(14),
+              child: _card(
+                child: Row(
+                  children: [
+                    const Icon(Icons.event_outlined, size: 20, color: HomePalette.navy),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        _massDate == null
+                            ? 'Choisir une date'
+                            : '${_massDate!.day.toString().padLeft(2, '0')}/${_massDate!.month.toString().padLeft(2, '0')}/${_massDate!.year}',
+                        style: TextStyle(color: _massDate == null ? HomePalette.textMuted : HomePalette.navy, fontWeight: FontWeight.w600),
+                      ),
                     ),
-                  ),
-                  if (_massDate != null)
-                    GestureDetector(
-                      onTap: () => setState(() => _massDate = null),
-                      child: const Icon(Icons.close, size: 18, color: HomePalette.textMuted),
-                    ),
-                ],
+                    if (_massDate != null)
+                      GestureDetector(
+                        onTap: () => setState(() => _massDate = null),
+                        child: const Icon(Icons.close, size: 18, color: HomePalette.textMuted),
+                      ),
+                  ],
+                ),
               ),
-            ),
-          ),
-          const SizedBox(height: 16),
+            ).animate().fadeIn(duration: 260.ms, delay: 100.ms).slideY(begin: .04, end: 0, duration: 260.ms, delay: 100.ms, curve: Curves.easeOutCubic),
+            const SizedBox(height: 16),
+          ],
 
-          _label('Montant (F CFA)'),
-          _card(
+          Row(
+            children: [
+              _label('Montant (F CFA)'),
+              if (locked) ...[
+                const SizedBox(width: 8),
+                _lockedBadge(),
+              ],
+            ],
+          ).animate().fadeIn(duration: 260.ms, delay: 120.ms),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOut,
+            decoration: BoxDecoration(
+              color: locked ? const Color(0xFFF3F6FA) : Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: locked ? HomePalette.navy.withValues(alpha: .25) : HomePalette.cardBorder),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
             child: TextField(
               controller: _amountController,
+              enabled: !locked,
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               onChanged: (_) => setState(() {}),
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: HomePalette.navy),
-              decoration: const InputDecoration(border: InputBorder.none, hintText: '0'),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: locked ? HomePalette.navy.withValues(alpha: .7) : HomePalette.navy,
+              ),
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                hintText: '0',
+                suffixIcon: locked ? const Icon(Icons.lock_outline_rounded, size: 18, color: HomePalette.navy) : null,
+              ),
             ),
-          ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: option.suggestedAmounts
-                .map((v) => ActionChip(
-                      label: Text('${_fmt(v)} F'),
-                      backgroundColor: Colors.white,
-                      side: const BorderSide(color: HomePalette.cardBorder),
-                      onPressed: () => setState(() => _amountController.text = '$v'),
-                    ))
-                .toList(),
-          ),
+          ).animate().fadeIn(duration: 260.ms, delay: 120.ms).slideY(begin: .04, end: 0, duration: 260.ms, delay: 120.ms, curve: Curves.easeOutCubic),
+          if (locked) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Montant fixé par votre paroisse — non modifiable.',
+              style: const TextStyle(fontSize: 11.5, color: HomePalette.textMuted),
+            ).animate().fadeIn(duration: 220.ms, delay: 140.ms),
+          ],
+          if (!locked && option.suggestedAmounts.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final (i, v) in option.suggestedAmounts.indexed)
+                  ActionChip(
+                    label: Text('${_fmt(v)} F'),
+                    backgroundColor: Colors.white,
+                    side: const BorderSide(color: HomePalette.cardBorder),
+                    onPressed: () => setState(() => _amountController.text = '$v'),
+                  ).animate().fadeIn(duration: 220.ms, delay: (150 + i * 40).ms).scaleXY(begin: .9, end: 1, duration: 220.ms, delay: (150 + i * 40).ms, curve: Curves.easeOutBack),
+              ],
+            ),
+          ],
 
           const SizedBox(height: 16),
-          _label('Note (optionnel)'),
+          _label('Note (optionnel)').animate().fadeIn(duration: 260.ms, delay: 160.ms),
           _card(
             child: TextField(
               controller: _noteController,
               maxLines: 2,
               decoration: const InputDecoration(border: InputBorder.none, hintText: 'Un mot pour la paroisse…'),
             ),
-          ),
+          ).animate().fadeIn(duration: 260.ms, delay: 160.ms).slideY(begin: .04, end: 0, duration: 260.ms, delay: 160.ms, curve: Curves.easeOutCubic),
 
           if (!widget.options.configured) ...[
             const SizedBox(height: 18),
@@ -268,6 +334,19 @@ class _PaymentFormScreenState extends ConsumerState<PaymentFormScreen> {
   Widget _label(String text) => Padding(
         padding: const EdgeInsets.only(bottom: 6, left: 2),
         child: Text(text, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: HomePalette.textBody)),
+      );
+
+  Widget _lockedBadge() => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        decoration: BoxDecoration(color: HomePalette.navy.withValues(alpha: .08), borderRadius: BorderRadius.circular(100)),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.lock_outline_rounded, size: 11, color: HomePalette.navy),
+            SizedBox(width: 3),
+            Text('Fixé par la paroisse', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: HomePalette.navy)),
+          ],
+        ),
       );
 
   Widget _card({required Widget child}) => Container(

@@ -10,7 +10,7 @@ import 'country_flag_ci.dart';
 /// The phone input used across the auth flow: a fixed Côte d'Ivoire dial-code
 /// prefix (flag + +225) followed by the national number, grouped by pairs as
 /// the user types, with a trailing phone icon (design screen 2).
-class PhoneNumberField extends StatelessWidget {
+class PhoneNumberField extends StatefulWidget {
   const PhoneNumberField({
     super.key,
     required this.controller,
@@ -29,69 +29,107 @@ class PhoneNumberField extends StatelessWidget {
   final ValueChanged<String>? onSubmitted;
 
   @override
+  State<PhoneNumberField> createState() => _PhoneNumberFieldState();
+}
+
+class _PhoneNumberFieldState extends State<PhoneNumberField> {
+  late final FocusNode _focusNode;
+  bool _focused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode = FocusNode()..addListener(_onFocusChange);
+  }
+
+  void _onFocusChange() {
+    if (_focusNode.hasFocus != _focused) {
+      setState(() => _focused = _focusNode.hasFocus);
+    }
+  }
+
+  @override
+  void dispose() {
+    _focusNode.removeListener(_onFocusChange);
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('TÉLÉPHONE', style: Theme.of(context).textTheme.labelMedium),
         const SizedBox(height: AppDimens.sm),
-        TextFormField(
-          controller: controller,
-          enabled: enabled,
-          autofocus: autofocus,
-          keyboardType: TextInputType.phone,
-          textInputAction: TextInputAction.done,
-          onChanged: onChanged,
-          onFieldSubmitted: onSubmitted,
-          inputFormatters: [
-            FilteringTextInputFormatter.digitsOnly,
-            PhoneInputFormatter(),
-          ],
-          style: const TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-            letterSpacing: 1.2,
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppDimens.fieldRadius),
+            boxShadow: _focused
+                ? [BoxShadow(color: AppColors.navy.withValues(alpha: .16), blurRadius: 14, offset: const Offset(0, 4))]
+                : const [],
           ),
-          decoration: InputDecoration(
-            errorText: errorText,
-            hintText: '01 XX XX XX XX',
-            hintStyle: const TextStyle(
-              color: AppColors.textHint,
+          child: TextFormField(
+            controller: widget.controller,
+            focusNode: _focusNode,
+            enabled: widget.enabled,
+            autofocus: widget.autofocus,
+            keyboardType: TextInputType.phone,
+            textInputAction: TextInputAction.done,
+            onChanged: widget.onChanged,
+            onFieldSubmitted: widget.onSubmitted,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              PhoneInputFormatter(),
+            ],
+            style: const TextStyle(
               fontSize: 17,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
               letterSpacing: 1.2,
             ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: AppDimens.lg,
-              vertical: 18,
-            ),
-            prefixIcon: Padding(
-              padding: const EdgeInsets.only(left: AppDimens.lg, right: AppDimens.sm),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const CountryFlagCI(),
-                  const SizedBox(width: AppDimens.sm),
-                  Text(
-                    AppConstants.defaultDialCode,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(width: AppDimens.md),
-                  Container(height: 24, width: 1.2, color: AppColors.border),
-                ],
+            decoration: InputDecoration(
+              errorText: widget.errorText,
+              hintText: '01 XX XX XX XX',
+              hintStyle: const TextStyle(
+                color: AppColors.textHint,
+                fontSize: 17,
+                fontWeight: FontWeight.w500,
+                letterSpacing: 1.2,
               ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: AppDimens.lg,
+                vertical: 18,
+              ),
+              prefixIcon: Padding(
+                padding: const EdgeInsets.only(left: AppDimens.lg, right: AppDimens.sm),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const CountryFlagCI(),
+                    const SizedBox(width: AppDimens.sm),
+                    Text(
+                      AppConstants.defaultDialCode,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(width: AppDimens.md),
+                    Container(height: 24, width: 1.2, color: AppColors.border),
+                  ],
+                ),
+              ),
+              prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+              suffixIcon: const Padding(
+                padding: EdgeInsets.only(right: AppDimens.lg),
+                child: Icon(Icons.phone_outlined, color: AppColors.textHint, size: 22),
+              ),
+              suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
             ),
-            prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
-            suffixIcon: const Padding(
-              padding: EdgeInsets.only(right: AppDimens.lg),
-              child: Icon(Icons.phone_outlined, color: AppColors.textHint, size: 22),
-            ),
-            suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
           ),
         ),
       ],

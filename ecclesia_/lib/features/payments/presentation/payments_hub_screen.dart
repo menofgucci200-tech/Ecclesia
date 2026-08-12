@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_exception.dart';
@@ -10,7 +12,7 @@ import 'my_payments_screen.dart';
 import 'payment_form_screen.dart';
 
 /// The "Paiements" tab: every payment a faithful can make to the parish
-/// (mass request, quête, don, casuel, denier, cierges) via CinetPay.
+/// (demande de messe, quête, don, autre) via CinetPay.
 class PaymentsHubScreen extends ConsumerWidget {
   const PaymentsHubScreen({super.key});
 
@@ -18,10 +20,6 @@ class PaymentsHubScreen extends ConsumerWidget {
         'mass_request' => Icons.church_outlined,
         'quete' => Icons.volunteer_activism_outlined,
         'don' => Icons.favorite_border,
-        'caritas' => Icons.handshake_outlined,
-        'casuel' => Icons.celebration_outlined,
-        'denier' => Icons.account_balance_outlined,
-        'cierge' => Icons.local_fire_department_outlined,
         'autre' => Icons.more_horiz,
         _ => Icons.payments_outlined,
       };
@@ -46,29 +44,22 @@ class PaymentsHubScreen extends ConsumerWidget {
         data: (options) => ListView(
           padding: const EdgeInsets.fromLTRB(16, 18, 16, 30),
           children: [
-            Row(
-              children: [
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Paiements', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: HomePalette.navy)),
-                      SizedBox(height: 2),
-                      Text('Soutenez la vie de votre paroisse.', style: TextStyle(fontSize: 14, color: HomePalette.textBody)),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const MyPaymentsScreen()),
-                  ),
-                  icon: const Icon(Icons.receipt_long_outlined, color: HomePalette.navy),
-                  tooltip: 'Mes paiements',
-                ),
-              ],
-            ),
+            const Text('Paiements', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: HomePalette.navy))
+                .animate()
+                .fadeIn(duration: 280.ms)
+                .slideY(begin: .08, end: 0, duration: 280.ms, curve: Curves.easeOutCubic),
+            const SizedBox(height: 2),
+            const Text('Soutenez la vie de votre paroisse.', style: TextStyle(fontSize: 14, color: HomePalette.textBody))
+                .animate()
+                .fadeIn(duration: 280.ms, delay: 40.ms),
+            const SizedBox(height: 14),
+            _MyPaymentsBanner(
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const MyPaymentsScreen()),
+              ),
+            ).animate().fadeIn(duration: 300.ms, delay: 60.ms).slideY(begin: .06, end: 0, duration: 300.ms, delay: 60.ms, curve: Curves.easeOutCubic),
             if (options.parishName != null) ...[
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -83,7 +74,7 @@ class PaymentsHubScreen extends ConsumerWidget {
                     Expanded(child: Text('Bénéficiaire : ${options.parishName}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: HomePalette.navy))),
                   ],
                 ),
-              ),
+              ).animate().fadeIn(duration: 280.ms, delay: 100.ms),
             ],
             if (!options.configured) ...[
               const SizedBox(height: 12),
@@ -106,7 +97,7 @@ class PaymentsHubScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
-              ),
+              ).animate().fadeIn(duration: 280.ms, delay: 120.ms),
             ],
             const SizedBox(height: 18),
             GridView.count(
@@ -116,14 +107,18 @@ class PaymentsHubScreen extends ConsumerWidget {
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
               childAspectRatio: 1.05,
-              children: options.types
-                  .map((t) => _PaymentTypeCard(
-                        option: t,
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => PaymentFormScreen(option: t, options: options)),
-                        ),
-                      ))
-                  .toList(),
+              children: [
+                for (final (i, t) in options.types.indexed)
+                  _PaymentTypeCard(
+                    option: t,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => PaymentFormScreen(option: t, options: options)),
+                    ),
+                  )
+                      .animate()
+                      .fadeIn(duration: 280.ms, delay: (140 + i * 60).ms)
+                      .slideY(begin: .08, end: 0, duration: 280.ms, delay: (140 + i * 60).ms, curve: Curves.easeOutCubic),
+              ],
             ),
           ],
         ),
@@ -132,40 +127,129 @@ class PaymentsHubScreen extends ConsumerWidget {
   }
 }
 
-class _PaymentTypeCard extends StatelessWidget {
+/// A prominent, always-visible entry point to the payment history & receipts
+/// — deliberately more discoverable than a small icon button.
+class _MyPaymentsBanner extends StatefulWidget {
+  const _MyPaymentsBanner({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  State<_MyPaymentsBanner> createState() => _MyPaymentsBannerState();
+}
+
+class _MyPaymentsBannerState extends State<_MyPaymentsBanner> {
+  double _scale = 1;
+
+  void _setPressed(bool pressed) => setState(() => _scale = pressed ? 0.98 : 1);
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => _setPressed(true),
+      onTapCancel: () => _setPressed(false),
+      onTapUp: (_) => _setPressed(false),
+      onTap: () {
+        HapticFeedback.selectionClick();
+        widget.onTap();
+      },
+      child: AnimatedScale(
+        scale: _scale,
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [HomePalette.navy, Color(0xFF1A6B9E)],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [BoxShadow(color: HomePalette.navy.withValues(alpha: .22), blurRadius: 14, offset: const Offset(0, 6))],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: .16), borderRadius: BorderRadius.circular(13)),
+                child: const Icon(Icons.receipt_long_rounded, color: Colors.white, size: 22),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Mes paiements', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Colors.white)),
+                    SizedBox(height: 2),
+                    Text('Historique et reçus de vos paiements', style: TextStyle(fontSize: 12, color: Colors.white70)),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: Colors.white, size: 22),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PaymentTypeCard extends StatefulWidget {
   const _PaymentTypeCard({required this.option, required this.onTap});
 
   final PaymentTypeOption option;
   final VoidCallback onTap;
 
   @override
+  State<_PaymentTypeCard> createState() => _PaymentTypeCardState();
+}
+
+class _PaymentTypeCardState extends State<_PaymentTypeCard> {
+  double _scale = 1;
+
+  void _setPressed(bool pressed) => setState(() => _scale = pressed ? 0.96 : 1);
+
+  @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        onTap: onTap,
+    return AnimatedScale(
+      scale: _scale,
+      duration: const Duration(milliseconds: 120),
+      curve: Curves.easeOut,
+      child: Material(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: HomePalette.cardBorder),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(color: HomePalette.navy.withValues(alpha: .08), borderRadius: BorderRadius.circular(13)),
-                child: Icon(PaymentsHubScreen.iconFor(option.type), color: HomePalette.navy, size: 24),
-              ),
-              const Spacer(),
-              Text(option.label, style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w800, color: HomePalette.navy)),
-              const SizedBox(height: 3),
-              Text(option.description, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: HomePalette.textBody, height: 1.35)),
-            ],
+        child: InkWell(
+          onTap: () {
+            HapticFeedback.selectionClick();
+            widget.onTap();
+          },
+          onTapDown: (_) => _setPressed(true),
+          onTapCancel: () => _setPressed(false),
+          onTapUp: (_) => _setPressed(false),
+          borderRadius: BorderRadius.circular(18),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: HomePalette.cardBorder),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(color: HomePalette.navy.withValues(alpha: .08), borderRadius: BorderRadius.circular(13)),
+                  child: Icon(PaymentsHubScreen.iconFor(widget.option.type), color: HomePalette.navy, size: 24),
+                ),
+                const Spacer(),
+                Text(widget.option.label, style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w800, color: HomePalette.navy)),
+                const SizedBox(height: 3),
+                Text(widget.option.description, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: HomePalette.textBody, height: 1.35)),
+              ],
+            ),
           ),
         ),
       ),

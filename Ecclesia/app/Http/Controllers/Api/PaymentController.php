@@ -9,6 +9,7 @@ use App\Enums\PaymentStatus;
 use App\Enums\PaymentType;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PaymentResource;
+use App\Models\Parish;
 use App\Models\Payment;
 use App\Services\CinetPayService;
 use Illuminate\Http\JsonResponse;
@@ -33,22 +34,36 @@ class PaymentController extends Controller
             'configured' => $this->cinetpay->isConfiguredFor($parish),
             'currency' => (string) config('services.cinetpay.currency', 'XOF'),
             'parish' => $parish?->only(['id', 'name']),
-            'types' => collect(PaymentType::cases())->map(fn (PaymentType $t) => [
-                'type' => $t->value,
-                'label' => $t->label(),
-                'description' => $t->description(),
-                'is_mass_request' => $t->isMassRequest(),
-                'suggested_amounts' => $t->suggestedAmounts(),
-                'default_amount' => $t->isMassRequest()
-                    ? ($parish?->massOfferingAmount() ?? 3000)
-                    : $t->defaultAmount(),
-                'date_label' => $t->dateLabel(),
-            ])->values(),
+            'types' => collect(PaymentType::cases())->map(function (PaymentType $t) use ($parish) {
+                $fixedAmount = $this->fixedAmountFor($t, $parish);
+
+                return [
+                    'type' => $t->value,
+                    'label' => $t->label(),
+                    'description' => $t->description(),
+                    'is_mass_request' => $t->isMassRequest(),
+                    'is_autre' => $t->isAutre(),
+                    'suggested_amounts' => $t->suggestedAmounts(),
+                    'fixed_amount' => $fixedAmount,
+                    'amount_locked' => $fixedAmount !== null,
+                    'date_label' => $t->dateLabel(),
+                ];
+            })->values(),
             'mass_intention_types' => collect(MassIntentionType::cases())->map(fn (MassIntentionType $t) => [
                 'value' => $t->value,
                 'label' => $t->label(),
             ])->values(),
         ]);
+    }
+
+    /** The parish-configured fixed amount (XOF) for a payment type, if any. */
+    private function fixedAmountFor(PaymentType $type, ?Parish $parish): ?int
+    {
+        return match ($type) {
+            PaymentType::MassRequest => $parish?->massOfferingAmount(),
+            PaymentType::Quete => $parish?->queteAmount(),
+            default => null,
+        };
     }
 
     /** Create a payment and hand back the CinetPay checkout URL. */
@@ -63,6 +78,8 @@ class PaymentController extends Controller
             // Mass-intention fields (required only for mass requests).
             'intention_type' => ['nullable', new Enum(MassIntentionType::class)],
             'intention' => ['nullable', 'string', 'max:500'],
+            // Title/motif (required only for "Autre").
+            'title' => ['nullable', 'string', 'max:150'],
         ]);
 
         $type = PaymentType::from($validated['type']);
@@ -76,6 +93,13 @@ class PaymentController extends Controller
             ], 422);
         }
 
+        if ($type->isAutre() && empty($validated['title'])) {
+            return response()->json([
+                'message' => 'Veuillez préciser le motif du paiement.',
+                'errors' => ['title' => ['Le motif est obligatoire.']],
+            ], 422);
+        }
+
         $user = $request->user();
         $parish = $user->parish;
 
@@ -85,12 +109,20 @@ class PaymentController extends Controller
             ], 422);
         }
 
+        $fixedAmount = $this->fixedAmountFor($type, $parish);
+        if ($fixedAmount !== null && $amount !== $fixedAmount) {
+            return response()->json([
+                'message' => 'Le montant fixé par la paroisse doit être respecté.',
+                'errors' => ['amount' => ['Le montant doit être exactement '.$fixedAmount.' '.config('services.cinetpay.currency', 'XOF').'.']],
+            ], 422);
+        }
+
         $payment = Payment::create([
             'reference' => Payment::generateReference(),
             'parish_id' => $user->parish_id,
             'user_id' => $user->id,
             'type' => $type,
-            'label' => $type->label(),
+            'label' => $type->isAutre() ? $validated['title'] : $type->label(),
             'amount' => $amount,
             'currency' => (string) config('services.cinetpay.currency', 'XOF'),
             'status' => PaymentStatus::Pending,

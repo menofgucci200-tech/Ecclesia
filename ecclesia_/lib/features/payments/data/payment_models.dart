@@ -5,29 +5,40 @@ class PaymentTypeOption {
     required this.label,
     required this.description,
     required this.isMassRequest,
+    required this.isAutre,
     required this.suggestedAmounts,
     required this.dateLabel,
-    this.defaultAmount,
+    this.fixedAmount,
+    this.amountLocked = false,
   });
 
   final String type;
   final String label;
   final String description;
   final bool isMassRequest;
+  final bool isAutre;
   final List<int> suggestedAmounts;
   final String dateLabel;
-  final int? defaultAmount;
+
+  /// The amount set by the parish for this type, if any.
+  final int? fixedAmount;
+
+  /// Whether [fixedAmount] must be paid exactly (the amount field is
+  /// read-only in the form).
+  final bool amountLocked;
 
   factory PaymentTypeOption.fromJson(Map<String, dynamic> json) => PaymentTypeOption(
         type: json['type'] as String,
         label: json['label'] as String? ?? '',
         description: json['description'] as String? ?? '',
         isMassRequest: json['is_mass_request'] as bool? ?? false,
+        isAutre: json['is_autre'] as bool? ?? false,
         suggestedAmounts: ((json['suggested_amounts'] as List<dynamic>?) ?? const [])
             .map((e) => (e as num).toInt())
             .toList(),
         dateLabel: json['date_label'] as String? ?? 'Date (optionnel)',
-        defaultAmount: (json['default_amount'] as num?)?.toInt(),
+        fixedAmount: (json['fixed_amount'] as num?)?.toInt(),
+        amountLocked: json['amount_locked'] as bool? ?? false,
       );
 }
 

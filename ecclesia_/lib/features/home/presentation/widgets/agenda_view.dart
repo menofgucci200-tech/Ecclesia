@@ -80,6 +80,26 @@ class _AgendaViewState extends ConsumerState<AgendaView> {
     _pageController.animateToPage(_initialPage, duration: const Duration(milliseconds: 320), curve: Curves.easeOutCubic);
   }
 
+  /// Lets the user jump straight to an arbitrary month/date (e.g. January
+  /// 2030) instead of tapping the prev/next arrows repeatedly, then opens
+  /// that date's event list.
+  Future<void> _pickMonthDate(Map<String, List<AgendaEvent>> byDay) async {
+    HapticFeedback.selectionClick();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _month,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      helpText: 'Aller à une date',
+    );
+    if (picked == null || !mounted) return;
+
+    final page = _initialPage + (picked.year - _anchor.year) * 12 + (picked.month - _anchor.month);
+    await _pageController.animateToPage(page, duration: const Duration(milliseconds: 420), curve: Curves.easeOutCubic);
+    if (!mounted) return;
+    _showDay(picked, byDay[_key(picked)] ?? const []);
+  }
+
   void _toggleType(String type) {
     HapticFeedback.selectionClick();
     setState(() {
@@ -230,14 +250,26 @@ class _AgendaViewState extends ConsumerState<AgendaView> {
             children: [
               _navBtn(Icons.chevron_left, () => _pageController.previousPage(duration: const Duration(milliseconds: 260), curve: Curves.easeOut)),
               Expanded(
-                child: Center(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 180),
-                    child: Text(
-                      '${_months[_month.month - 1]} ${_month.year}',
-                      key: ValueKey('${_month.year}-${_month.month}'),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: widget.seasonColor),
+                child: InkWell(
+                  onTap: () => _pickMonthDate(byDay),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 180),
+                          child: Text(
+                            '${_months[_month.month - 1]} ${_month.year}',
+                            key: ValueKey('${_month.year}-${_month.month}'),
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: widget.seasonColor),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(Icons.expand_more_rounded, size: 18, color: widget.seasonColor.withValues(alpha: .7)),
+                      ],
                     ),
                   ),
                 ),

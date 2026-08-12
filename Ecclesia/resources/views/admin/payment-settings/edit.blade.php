@@ -50,13 +50,26 @@
                 </div>
 
                 <div class="card card-pad">
-                    <h3 class="mb-4 text-base font-bold">Demandes de messe</h3>
-                    <div>
-                        <label class="field-label" for="mass_offering_amount">Offrande de messe par défaut (F CFA)</label>
-                        <input id="mass_offering_amount" name="mass_offering_amount" type="number" min="0" step="100"
-                               value="{{ old('mass_offering_amount', $parish->mass_offering_amount) }}" class="input" placeholder="3000">
-                        <p class="field-hint">Montant proposé par défaut au fidèle. Laisser vide = 3 000 F CFA.</p>
-                        @error('mass_offering_amount') <p class="field-error">{{ $message }}</p> @enderror
+                    <h3 class="mb-4 text-base font-bold">Montants fixes</h3>
+                    <p class="mb-4 text-xs text-[color:var(--color-ink-soft)]">
+                        Si vous fixez un montant, le fidèle devra obligatoirement payer exactement cette somme — il ne
+                        pourra plus la modifier. Laissez vide pour qu'il saisisse librement le montant de son choix.
+                    </p>
+                    <div class="space-y-5">
+                        <div>
+                            <label class="field-label" for="mass_offering_amount">Demande de messe — montant obligatoire (F CFA)</label>
+                            <input id="mass_offering_amount" name="mass_offering_amount" type="number" min="0" step="100"
+                                   value="{{ old('mass_offering_amount', $parish->mass_offering_amount) }}" class="input" placeholder="Libre">
+                            <p class="field-hint">Laisser vide = le fidèle saisit le montant qu'il veut.</p>
+                            @error('mass_offering_amount') <p class="field-error">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <label class="field-label" for="quete_amount">Quête — montant obligatoire (F CFA)</label>
+                            <input id="quete_amount" name="quete_amount" type="number" min="0" step="100"
+                                   value="{{ old('quete_amount', $parish->quete_amount) }}" class="input" placeholder="Libre">
+                            <p class="field-hint">Laisser vide = le fidèle saisit le montant qu'il veut.</p>
+                            @error('quete_amount') <p class="field-error">{{ $message }}</p> @enderror
+                        </div>
                     </div>
                 </div>
 

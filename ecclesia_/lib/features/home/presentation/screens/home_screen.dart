@@ -94,44 +94,53 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light.copyWith(statusBarColor: Colors.transparent),
-      child: Scaffold(
-        key: _scaffoldKey,
-        backgroundColor: HomePalette.screenBg,
-        endDrawer: const HomeEndDrawer(),
-        body: Column(
-          children: [
-            _HomeAppBar(
-              notifCount: unreadCount,
-              barColor: season.primary,
-              seasonName: season.name,
-              // Home is the root of the authenticated experience (reached via
-              // `context.go`), so there is nothing to pop. The back arrow
-              // returns to the "Bienvenue" screen instead.
-              onBack: () => context.go(AppRoutes.welcomeUser),
-              onNotif: () => _openNotifications(context),
-            ),
-            const OfflineBanner(),
-            Expanded(
-              child: switch (_tab) {
-                0 => _HomeFeed(
-                    onComingSoon: _comingSoon,
-                    onSeeMovements: () => setState(() => _tab = 1),
-                    onSeePaiements: () => setState(() => _tab = 2),
-                    onSeeAgenda: () => setState(() => _tab = 3),
-                  ),
-                1 => const MovementsScreen(),
-                2 => const PaymentsHubScreen(),
-                3 => AgendaView(seasonColor: season.primary),
-                _ => _TabPlaceholder(index: _tab),
-              },
-            ),
-          ],
-        ),
-        bottomNavigationBar: HomeBottomNav(
-          currentIndex: _tab,
-          onTap: _onTab,
-          activeColor: season.primary,
-          avatarUrl: ref.watch(currentUserProvider)?.avatarUrl,
+      child: PopScope(
+        // The back button always lands on Accueil first, regardless of which
+        // tab is active — only a second press (from Accueil) is allowed to
+        // leave the dashboard.
+        canPop: _tab == 0,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) setState(() => _tab = 0);
+        },
+        child: Scaffold(
+          key: _scaffoldKey,
+          backgroundColor: HomePalette.screenBg,
+          endDrawer: const HomeEndDrawer(),
+          body: Column(
+            children: [
+              _HomeAppBar(
+                notifCount: unreadCount,
+                barColor: season.primary,
+                seasonName: season.name,
+                // Home is the root of the authenticated experience (reached via
+                // `context.go`), so there is nothing to pop. The back arrow
+                // returns to the "Bienvenue" screen instead.
+                onBack: () => context.go(AppRoutes.welcomeUser),
+                onNotif: () => _openNotifications(context),
+              ),
+              const OfflineBanner(),
+              Expanded(
+                child: switch (_tab) {
+                  0 => _HomeFeed(
+                      onComingSoon: _comingSoon,
+                      onSeeMovements: () => setState(() => _tab = 1),
+                      onSeePaiements: () => setState(() => _tab = 2),
+                      onSeeAgenda: () => setState(() => _tab = 3),
+                    ),
+                  1 => const MovementsScreen(),
+                  2 => const PaymentsHubScreen(),
+                  3 => AgendaView(seasonColor: season.primary),
+                  _ => _TabPlaceholder(index: _tab),
+                },
+              ),
+            ],
+          ),
+          bottomNavigationBar: HomeBottomNav(
+            currentIndex: _tab,
+            onTap: _onTab,
+            activeColor: season.primary,
+            avatarUrl: ref.watch(currentUserProvider)?.avatarUrl,
+          ),
         ),
       ),
     );
@@ -228,16 +237,32 @@ class _IconButton extends StatelessWidget {
 }
 
 /// A chip for one of the faithful's movements, shown in "Mes activités".
-class _MyMovementChip extends StatelessWidget {
+class _MyMovementChip extends StatefulWidget {
   const _MyMovementChip({required this.movement});
 
   final Movement movement;
 
   @override
+  State<_MyMovementChip> createState() => _MyMovementChipState();
+}
+
+class _MyMovementChipState extends State<_MyMovementChip> {
+  double _scale = 1;
+
+  void _setPressed(bool pressed) => setState(() => _scale = pressed ? 0.96 : 1);
+
+  @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return AnimatedScale(
+      scale: _scale,
+      duration: const Duration(milliseconds: 120),
+      curve: Curves.easeOut,
+      child: InkWell(
+      onTapDown: (_) => _setPressed(true),
+      onTapCancel: () => _setPressed(false),
+      onTapUp: (_) => _setPressed(false),
       onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => MovementDetailScreen(id: movement.id, name: movement.name)),
+        MaterialPageRoute(builder: (_) => MovementDetailScreen(id: widget.movement.id, name: widget.movement.name)),
       ),
       borderRadius: BorderRadius.circular(16),
       child: Container(
@@ -254,7 +279,7 @@ class _MyMovementChip extends StatelessWidget {
               width: 40, height: 40, clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(color: HomePalette.navy.withValues(alpha: .08), borderRadius: BorderRadius.circular(11)),
               child: FadeNetworkImage(
-                url: movement.logoUrl,
+                url: widget.movement.logoUrl,
                 fallback: const Icon(Icons.groups_outlined, size: 20, color: HomePalette.navy),
               ),
             ),
@@ -263,13 +288,14 @@ class _MyMovementChip extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(movement.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: HomePalette.navy)),
-                  Text(movement.category ?? 'Mouvement', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: HomePalette.textBody)),
+                  Text(widget.movement.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: HomePalette.navy)),
+                  Text(widget.movement.category ?? 'Mouvement', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: HomePalette.textBody)),
                 ],
               ),
             ),
           ],
         ),
+      ),
       ),
     );
   }

@@ -2,7 +2,7 @@
 
 @section('title', 'Paiements')
 @section('heading', 'Paiements')
-@section('subheading', 'Dons, quêtes, demandes de messe et casuel (CinetPay)')
+@section('subheading', 'Demandes de messe, quêtes, dons et autres paiements (CinetPay)')
 
 @section('content')
     {{-- Stats --}}
