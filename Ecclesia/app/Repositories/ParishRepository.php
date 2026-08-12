@@ -35,20 +35,32 @@ class ParishRepository implements ParishRepositoryInterface
 
     public function nearby(float $lat, float $lng, float $radiusKm): \Illuminate\Support\Collection
     {
-        // Haversine formula, computed in SQL so filtering/sorting by distance
-        // doesn't require pulling every parish into PHP.
-        $distance = '(6371 * ACOS(LEAST(1, GREATEST(-1,
-            COS(RADIANS(?)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(?))
-            + SIN(RADIANS(?)) * SIN(RADIANS(latitude))
-        ))))';
-
+        // Computed in PHP rather than raw SQL trig functions: a parish
+        // directory is at most a few hundred rows, so there's no
+        // performance reason to lean on the database here — and doing it
+        // in PHP sidesteps any SQL-dialect/mode quirks of the host's MySQL.
         return Parish::query()
             ->active()
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
-            ->selectRaw('parishes.*, '.$distance.' as distance_km', [$lat, $lng, $lat])
-            ->havingRaw($distance.' <= ?', [$lat, $lng, $lat, $radiusKm])
-            ->orderBy('distance_km')
-            ->get();
+            ->get()
+            ->map(function (Parish $parish) use ($lat, $lng) {
+                $parish->distance_km = $this->haversineKm($lat, $lng, (float) $parish->latitude, (float) $parish->longitude);
+
+                return $parish;
+            })
+            ->filter(fn (Parish $parish) => $parish->distance_km <= $radiusKm)
+            ->sortBy('distance_km')
+            ->values();
+    }
+
+    private function haversineKm(float $lat1, float $lng1, float $lat2, float $lng2): float
+    {
+        $earthRadiusKm = 6371;
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLng = deg2rad($lng2 - $lng1);
+        $a = sin($dLat / 2) ** 2 + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLng / 2) ** 2;
+
+        return $earthRadiusKm * 2 * atan2(sqrt($a), sqrt(1 - $a));
     }
 }
