@@ -13,6 +13,11 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class AnnouncementResource extends JsonResource
 {
+    public function __construct(Announcement $resource, private readonly bool $isSaved = false, private readonly bool $isLiked = false)
+    {
+        parent::__construct($resource);
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -33,6 +38,8 @@ class AnnouncementResource extends JsonResource
             'is_important' => $this->is_important,
             'likes_count' => $this->likes_count,
             'comments_count' => $this->comments_count,
+            'is_saved' => $this->isSaved,
+            'is_liked' => $this->isLiked,
             'published_at' => $this->published_at?->toIso8601String(),
         ];
     }

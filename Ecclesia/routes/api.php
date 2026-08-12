@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\AgendaController;
+use App\Http\Controllers\Api\AnnouncementCommentController;
 use App\Http\Controllers\Api\AnnouncementController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\HomeController;
@@ -53,6 +54,18 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // The parish feed ("Fil paroissial") for the authenticated faithful.
     Route::get('parish/announcements', [AnnouncementController::class, 'index']);
+
+    // Saved ("Enregistrées") announcements — static segment before the wildcard.
+    Route::get('announcements/saved', [AnnouncementController::class, 'saved']);
+    Route::post('announcements/{announcement}/save', [AnnouncementController::class, 'toggleSave'])->whereNumber('announcement');
+    Route::post('announcements/{announcement}/like', [AnnouncementController::class, 'toggleLike'])->whereNumber('announcement');
+
+    // Comments on an announcement.
+    Route::get('announcements/{announcement}/comments', [AnnouncementCommentController::class, 'index'])->whereNumber('announcement');
+    Route::post('announcements/{announcement}/comments', [AnnouncementCommentController::class, 'store'])
+        ->whereNumber('announcement')->middleware('throttle:20,1');
+    Route::delete('announcements/{announcement}/comments/{comment}', [AnnouncementCommentController::class, 'destroy'])
+        ->whereNumber('announcement')->whereNumber('comment');
 
     // Notification center (bell icon): parish feed against a read watermark.
     Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);

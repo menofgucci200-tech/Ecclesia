@@ -45,6 +45,11 @@ class ApiConstants {
 
   // Parish content — the "Fil paroissial" feed.
   static const String parishAnnouncements = '/parish/announcements';
+  static const String savedAnnouncements = '/announcements/saved';
+  static String announcementSave(int id) => '/announcements/$id/save';
+  static String announcementLike(int id) => '/announcements/$id/like';
+  static String announcementComments(int id) => '/announcements/$id/comments';
+  static String announcementComment(int announcementId, int commentId) => '/announcements/$announcementId/comments/$commentId';
 
   // Notification center (bell icon).
   static const String notifications = '/notifications';

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Announcement extends Model
 {
@@ -62,6 +63,30 @@ class Announcement extends Model
     public function parish(): BelongsTo
     {
         return $this->belongsTo(Parish::class);
+    }
+
+    /**
+     * @return HasMany<AnnouncementComment, $this>
+     */
+    public function comments(): HasMany
+    {
+        return $this->hasMany(AnnouncementComment::class);
+    }
+
+    /**
+     * @return HasMany<AnnouncementSave, $this>
+     */
+    public function saves(): HasMany
+    {
+        return $this->hasMany(AnnouncementSave::class);
+    }
+
+    /**
+     * @return HasMany<AnnouncementLike, $this>
+     */
+    public function likes(): HasMany
+    {
+        return $this->hasMany(AnnouncementLike::class);
     }
 
     /**

@@ -17,6 +17,8 @@ class AnnouncementModel extends Equatable {
     required this.isImportant,
     required this.likesCount,
     required this.commentsCount,
+    this.isSaved = false,
+    this.isLiked = false,
     this.publishedAt,
   });
 
@@ -34,6 +36,8 @@ class AnnouncementModel extends Equatable {
   final bool isImportant;
   final int likesCount;
   final int commentsCount;
+  final bool isSaved;
+  final bool isLiked;
   final DateTime? publishedAt;
 
   static const List<String> _monthsFr = [
@@ -77,9 +81,31 @@ class AnnouncementModel extends Equatable {
       isImportant: json['is_important'] as bool? ?? false,
       likesCount: (json['likes_count'] as num?)?.toInt() ?? 0,
       commentsCount: (json['comments_count'] as num?)?.toInt() ?? 0,
+      isSaved: json['is_saved'] as bool? ?? false,
+      isLiked: json['is_liked'] as bool? ?? false,
       publishedAt: published != null ? DateTime.tryParse(published)?.toLocal() : null,
     );
   }
+
+  AnnouncementModel copyWith({bool? isSaved, bool? isLiked, int? commentsCount}) => AnnouncementModel(
+        id: id,
+        category: category,
+        categoryLabel: categoryLabel,
+        title: title,
+        body: body,
+        imageUrl: imageUrl,
+        videoUrl: videoUrl,
+        authorName: authorName,
+        authorRole: authorRole,
+        authorInitials: authorInitials,
+        isPinned: isPinned,
+        isImportant: isImportant,
+        likesCount: likesCount,
+        commentsCount: commentsCount ?? this.commentsCount,
+        isSaved: isSaved ?? this.isSaved,
+        isLiked: isLiked ?? this.isLiked,
+        publishedAt: publishedAt,
+      );
 
   @override
   List<Object?> get props => [
@@ -96,6 +122,8 @@ class AnnouncementModel extends Equatable {
         isImportant,
         likesCount,
         commentsCount,
+        isSaved,
+        isLiked,
         publishedAt,
       ];
 }

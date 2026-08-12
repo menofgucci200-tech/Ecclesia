@@ -12,6 +12,10 @@ import '../../../../core/widgets/offline_banner.dart';
 import '../../../../core/widgets/skeleton.dart';
 import '../../../../router/app_routes.dart';
 import '../../../announcement/data/models/announcement_model.dart';
+import '../../../announcement/presentation/announcement_detail_screen.dart';
+import '../../../announcement/presentation/announcement_list_screen.dart';
+import '../../../announcement/presentation/announcement_share.dart';
+import '../../../announcement/data/repositories/announcement_repository_impl.dart';
 import '../../../announcement/presentation/announcement_visuals.dart';
 import '../../../announcement/presentation/providers/parish_feed_provider.dart';
 import '../../../auth/presentation/providers/session_controller.dart';
@@ -398,7 +402,7 @@ class _HomeFeed extends ConsumerWidget {
           if (movementsFirst && !hidden.contains('activities')) ...activitiesBlock,
           if (!hidden.contains('feed')) ...[
             const SizedBox(height: 18),
-            ..._feedSection(ref, feedAsync),
+            ..._feedSection(context, ref, feedAsync),
           ],
           if (!hidden.contains('events')) ...[
             const SizedBox(height: 20),
@@ -482,7 +486,7 @@ class _HomeFeed extends ConsumerWidget {
   }
 
   /// The priority announcement + "Fil paroissial" block, driven by the API.
-  List<Widget> _feedSection(WidgetRef ref, AsyncValue<List<AnnouncementModel>> feedAsync) {
+  List<Widget> _feedSection(BuildContext context, WidgetRef ref, AsyncValue<List<AnnouncementModel>> feedAsync) {
     return feedAsync.when(
       loading: () => const [
         Padding(padding: _hpad, child: SectionHeader(title: 'Fil paroissial')),
@@ -521,7 +525,7 @@ class _HomeFeed extends ConsumerWidget {
                 title: priority.title,
                 body: priority.body,
                 timeLabel: priority.relativeLabel,
-                onRead: () => onComingSoon("Lire l'annonce"),
+                onRead: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => AnnouncementDetailScreen(announcement: priority!))),
               ).animate().fadeIn(duration: 320.ms).slideY(begin: .05, end: 0, duration: 320.ms, curve: Curves.easeOutCubic),
             ))
             ..add(const SizedBox(height: 18));
@@ -530,7 +534,7 @@ class _HomeFeed extends ConsumerWidget {
         children
           ..add(Padding(
             padding: _hpad,
-            child: SectionHeader(title: 'Fil paroissial', onSeeAll: () => onComingSoon('Fil paroissial')),
+            child: SectionHeader(title: 'Fil paroissial', onSeeAll: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AnnouncementListScreen()))),
           ))
           ..add(const SizedBox(height: 12));
 
@@ -560,7 +564,12 @@ class _HomeFeed extends ConsumerWidget {
                 date: post.shortDate,
                 initialLikeCount: post.likesCount,
                 commentCount: post.commentsCount,
-                onShare: () => onComingSoon('Partager'),
+                isSaved: post.isSaved,
+                isLiked: post.isLiked,
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => AnnouncementDetailScreen(announcement: post))),
+                onShare: () => shareAnnouncement(post),
+                onToggleSave: () => ref.read(announcementRemoteDataSourceProvider).toggleSave(post.id),
+                onToggleLike: () => ref.read(announcementRemoteDataSourceProvider).toggleLike(post.id),
               )
                   .animate()
                   .fadeIn(duration: 320.ms, delay: (i * 60).ms)
